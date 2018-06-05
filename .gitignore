@@ -2,3 +2,7 @@
 data.json
 node_modules/
 old/
+ngrok
+.DS_Store
+bot-token
+bot-channel

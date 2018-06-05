@@ -1,11 +1,26 @@
 var express = require("express");
 var bodyParser = require("body-parser");
 var fs = require("fs");
+const { WebClient } = require('@slack/client');
 
 var app = express();
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 var path = __dirname;
+
+var token = fs.readFileSync(path + "/bot-token", "utf8");
+var channel = fs.readFileSync(path + "/bot-channel", "utf8");
+const web = new WebClient(token);
+
+
+/*
+web.chat.postMessage({ channel: channel, text: 'Hello there' })
+  .then((res) => {
+    // `res` contains information about the posted message
+    console.log('Message sent: ', res.ts);
+  })
+  .catch(console.error);
+*/
 
 //Get requests from frontend
 app.get("/", function(req, res) {
@@ -42,9 +57,9 @@ var getJSON = function() {
         console.log("No field named finals, creating: " + json);
         json.finals = {};
     }
-    if (!json.hasOwnProperty("table")) {
-        console.log("No field named table, creating: " + json);
-        json.table = {};
+    if (!json.hasOwnProperty("users")) {
+        console.log("No field named users, creating: " + json);
+        json.users = {};
     }
     
     return json;
@@ -141,68 +156,131 @@ var updateBracket = function(json) {
     
 }
 
+var processResult = function(d, json) {
+    r = {"valid":true, "ht":"", "at":"", "hg":0, "ag":0}
+    
+    //data must contain 3 arguments separated by space (team team result)
+    d = d.split(" ");
+    if (d.length != 3) {
+        r.valid = false;
+        return r;
+    }
+        
+    //result argument must be two numbers separated by dash (e.g 3-1)
+    d[2] = d[2].split("-");
+    if (isNaN(d[2][0]) || isNaN(d[2][1])) {
+        r.valid = false;
+        return r;
+    }
+    
+    //teams must be available in the users dictionary
+    d[0] = d[0].substring(1); //remove leading @
+    d[1] = d[1].substring(1); //remove leading @
+    if (!json.users.hasOwnProperty(d[0]) || !json.users.hasOwnProperty(d[1])) {
+        r.valid = false;
+        return r;
+    }
+    
+    //team ids exist in teams
+    d[0] = json.users[d[0]].user_id;
+    d[1] = json.users[d[1]].user_id;
+    if (!json.teams.includes(d[0]) || !json.teams.includes(d[1])) {
+        r.valid = false;
+        return r;
+    }
+        
+    //Else data seems fine and input (d) now contains proper data
+    r.ht = d[0];
+    r.at = d[1];
+    r.hg = d[2][0];
+    r.ag = d[2][1];
+    r.valid = true;
+    return r;
+}
+
 //Handle data post
 app.post("/api/:type", function(req, res) {
     var type = req.params.type;
     var json = getJSON();
     var entry = req.body;
     //var teamnames = json.teams.map(function(e){return e.name});
+    //console.log(entry);
+    //console.log(users);
+
     
     //Add new team
-    if (type == "team") {
-        console.log("Add team to json file");
-        console.log("Body: " + entry);
-        
+    if (type === "signup") {
+        var u = json.users[entry.user_name].user_id;
         //Add team if it is a unique name
-        if (!json.teams.includes(entry.name)) {
+        if (!json.teams.includes(u)) {
             //Before pushing, add all pairwise games to leage (non played games)
             json.teams.map(function(t) {
-                console.log("Adding: " + t + "-" + entry.name);
-                json.league[t + "-" + entry.name] = {"played":false, "date":0, "teams":{"home":t, "away":entry.name}, "goals":{"home":0, "away":0}};
-                console.log("Adding: " + entry.name + "-" + t);
-                json.league[entry.name + "-" + t] = {"played":false, "date":0, "teams":{"home":entry.name, "away":t}, "goals":{"home":0, "away":0}};
+                console.log("Adding: " + t + "-" + u);
+                json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}};
+                console.log("Adding: " + u + "-" + t);
+                json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}};
             });
+            json.teams.push(u);
             
-            json.teams.push(entry.name); 
-            console.log("Pushing new team: ", json);
+            //Generate league table
+            json.table = generateTable(json);
+
             writeJSON(json);
-            res.send(entry); //echo back
+            console.log(json);
+            
+            //Respond with successful add to league
+            res.json({response_type: "in_channel", text: "\<\@" + u + "\> was added to the league!"}); //echo back
         } else {
-            res.send("Team already exists");
+            //If team already is signed up
+            res.send("Team \<\@" + u + "\> already signed up");
         }
     }
+
+
     
     //Add result from game
-    else if (type == "result") {
-        console.log("Add result to json file");
-        console.log("Body: " + req.body);
-        
-        //Maybe TODO: Verify two teams and goals entries
-        
-        //Verify that teams exists
-        if (json.teams.includes(entry.teams.home) && json.teams.includes(entry.teams.away)) {
-            
+    else if (type === "result") {
+        var result = processResult(entry.text, json);
+        //If result is correctly formatted
+        if (result.valid) {
             //Count if result is connected to league game or finals (league games left)
             if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
                 //LEAGUE GAME
-                //Go through leage and add result
-                if (json.league[entry.teams.home + "-" + entry.teams.away].played === false) {
-                    console.log("Adding result " + entry.teams.home + "-" + entry.teams.away);
+
+                //If teams havn't met
+                if (json.league[result.ht + "-" + result.at].played === false) {
                     //Add home - away result
-                    json.league[entry.teams.home + "-" + entry.teams.away].played = true;
-                    json.league[entry.teams.home + "-" + entry.teams.away].goals.home = parseInt(entry.goals.home);
-                    json.league[entry.teams.home + "-" + entry.teams.away].goals.away = parseInt(entry.goals.away);
-                    json.league[entry.teams.home + "-" + entry.teams.away].date = Date.now();
-                    res.send(req.body); //echo back
-                } else if (json.league[entry.teams.away + "-" + entry.teams.home].played === false) {
-                    console.log("Adding result " + entry.teams.away + "-" + entry.teams.home);
+                    json.league[result.ht + "-" + result.at].played = true;
+                    json.league[result.ht + "-" + result.at].goals.home = parseInt(result.hg);
+                    json.league[result.ht + "-" + result.at].goals.away = parseInt(result.ag);
+                    json.league[result.ht + "-" + result.at].date = Date.now();
+
+                    //Channel response
+                    if (result.hg > result.ag)
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and won ("+result.hg+"-"+result.ag+")"});
+                    else if (result.hg < result.ag)
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and lost ("+result.hg+"-"+result.ag+")"});
+                    else
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and the result was a draw ("+result.hg+"-"+result.ag+")"});
+                }
+                //Else check return game
+                else if (json.league[result.at + "-" + result.ht].played === false) {
                     //Add inverted home - away result
-                    json.league[entry.teams.away + "-" + entry.teams.home].played = true;
-                    json.league[entry.teams.away + "-" + entry.teams.home].goals.home = parseInt(entry.goals.away);
-                    json.league[entry.teams.away + "-" + entry.teams.home].goals.away = parseInt(entry.goals.home);
-                    json.league[entry.teams.away + "-" + entry.teams.home].date = Date.now();
-                    res.send(req.body); //echo back
-                } else {
+                    json.league[result.at + "-" + result.ht].played = true;
+                    json.league[result.at + "-" + result.ht].goals.home = parseInt(result.ag);
+                    json.league[result.at + "-" + result.ht].goals.away = parseInt(result.hg);
+                    json.league[result.at + "-" + result.ht].date = Date.now();
+
+                    //Channel response
+                    if (result.hg > result.ag)
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and won ("+result.hg+"-"+result.ag+")"});
+                    else if (result.hg < result.ag)
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and lost ("+result.hg+"-"+result.ag+")"});
+                    else
+                        res.json({response_type:"in_channel", text:"\<\@"+result.ht+"\> played \<\@"+result.at+"\> and the result was a draw ("+result.hg+"-"+result.ag+")"});
+                }
+                //Else the teams should not meet
+                else {
                     res.send("Teams have already met twice");
                 }
 
@@ -224,9 +302,53 @@ app.post("/api/:type", function(req, res) {
             console.log("Pushing new result: ", json);
             writeJSON(json);
         } else {
-            res.send("One of the teams are not in the tournament");
+            res.send("Check result format!");
         }
-    } else {
+    }
+
+
+    //List available games for user (argument or not) (private)
+    else if (type === "games") {
+        var u = json.users[entry.user_name].user_id;
+        if (entry.text != "") u = json.users[entry.text.substring(1)].user_id;
+
+        var text = "*Games available for \<\@" + u + "\>:*";
+        Object.values(json.league).map(function(m) {
+            if (m.teams.home === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+            else if (m.teams.away === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+        });
+        res.send(text);
+    }
+
+    //Print table (private)
+    else if (type === "table") {
+        text = "*League table:*\nPos Team GP W D L F A GD Pts";
+        json.table.map(function(r) {
+            text += "\n"+r.pos+" \<\@"+r.name+"\> "+r.gp+" "+r.w+" "+r.d+" "+r.l+" "+r.f+" "+r.a+" "+r.gd+" "+r.pts;
+        });
+        res.send(text);
+    }
+
+    //Event subscription when a user changed information or someone joined the channel
+    else if (type === "user") {
+        res.json({"challenge":entry.challenge});
+        web.users.list()
+            .then((res) => {
+                // `res` contains information about the posted message
+                //console.log('Message sent: ', res);
+                json.users = {};
+                res.members.map(function(m) {
+                    json.users[m.name] = {"user_id":m.id, "user_name":m.name, "real_name":m.real_name, "display_name":m.profile.display_name};
+                });
+                console.log(json.users);
+                writeJSON(json);
+            })
+            .catch(console.error);
+    }
+
+
+    
+    else {
         res.send("API function does not exist");
     }
 });
