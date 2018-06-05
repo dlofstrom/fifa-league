@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>D3 Tutorial</title>
+    <!--<script src="https://d3js.org/d3.v3.js"></script>-->
+    <script type="text/javascript" src="d3.v3.js"></script>
+  </head>
+  <body>
+    <!--<svg width="500" height="500"></svg>-->
+    <script type="text/javascript">
+      var data_values = [5, 10, 30, 8, 45, 24, 16, 55, 60, 8, 45, 24, 16, 55, 60];
+      var svg = d3.select("body").append("svg").attr({"width":450,"height":400});
+      
+      var link = function(x1, y1, x2, y2) {
+      path = svg.append("path").attr("class","link").attr("stroke","red").attr("fill","none").attr("stroke-width","2px")
+      .attr("d", function(d) {
+      return "M" + x1 + "," + y1
+      + "C" + (x1 + x2)/2 + "," + y1
+      + " " + (x1 + x2)/2 + "," + y2
+      + " " + x2 + "," + y2;
+      });
+      }
+
+      var node = function(x, y, r, t) {
+      circle = svg.append("circle").attr("r",r).attr("cx", x).attr("cy", y).attr("fill","red").attr("stroke","gray").attr("stroke-width","2px");
+      text = svg.append("text").text(t).attr("x", x).attr("y", y-r-2).attr("text-anchor","middle").attr("font-family","sans-serif").attr("font-size","15px").attr("fill","red");
+      }
+
+      
+      
+      //var circles = svg.selectAll("circle").data(data_values).enter().append("circle").attr("r",function(v){return v}).attr("cx", function(v,i){return 20*i}).attr("cy", function(v,i){return 20*i});
+      //circles.attr({"fill":"red", "stroke":"black", "stroke-width":"3px"});
+
+      //var bars = svg.selectAll("rect").data(data_values).enter().append("rect").attr("width","25px").attr("height",function(d){return d*5;}).attr("x",function(d,i){return i*30}).attr("y",function(d){return 400-d*5;});
+      //bars.attr("fill","steelblue");
+
+      //var max = d3.max(data_values);
+      //var min = d3.min(data_values);
+
+      //bars.filter(function(d){return d==max;}).attr("fill","green");
+      //bars.filter(function(d){return d==min;}).attr("fill","red");
+
+      
+      link(10, 10, 60, 200);
+      link(16, 30, 70, 400);
+      link(10, 10, 100, 500);
+      link(10, 10, 140, 200);
+      link(10, 10, 160, 400);
+      link(10, 10, 170, 300);
+
+      node(170, 300, 15, "test");
+    </script>
+  </body>
+</html>
