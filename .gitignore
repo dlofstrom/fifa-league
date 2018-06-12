@@ -5,4 +5,4 @@ old/
 ngrok
 .DS_Store
 bot-token
-bot-channel
+subdomain
