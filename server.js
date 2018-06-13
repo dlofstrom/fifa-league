@@ -2,7 +2,6 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var fs = require("fs");
 const { WebClient } = require("@slack/client");
-//var localtunnel = require("localtunnel");
 
 var app = express();
 app.use(bodyParser.json())
@@ -12,13 +11,6 @@ var path = __dirname;
 var token = fs.readFileSync(path + "/bot-token", "utf8");
 const web = new WebClient(token);
 
-/*
-var subdomain = fs.readFileSync(path + "/subdomain", "utf8");
-console.log("Chosen subdomain " + subdomain);
-var tunnel = localtunnel(8000, {subdomain:subdomain}, function(err, tunnel) {
-    console.log("Tunnel opened on " + tunnel.url);
-});
-*/
 
 var getJSON = function() {
     var json = {};
@@ -161,16 +153,18 @@ var generateBracket = function(json) {
 
     //Generate static winners bracket
     json.finals["0"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                        "next":{"game":"done", "team":""}};
+                        "next":{"game":"done", "team":""}, "stage":{"name":"Final", "number":0}};
 
-    //TODO fix l0 and w0 pointing to 0    
     var stage = 1;
     var team = ["away", "home"];
     var w = 1;
     while (stage < nw) {
         for (var i = 1; i <= stage; i++) {
+            var postfix = (stage === 1) ? "nd" : "th";
             json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                  "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]}};
+                                  "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]}, "stage":{"name":"Winners "+2*stage+postfix, "number":i}};
+            //Fix next is final
+            if (Math.floor(w/2) === 0) json.finals["w"+w].next.game = "0";
             w += 1;
         }
         stage *= 2;
@@ -186,27 +180,32 @@ var generateBracket = function(json) {
     var l = 1;
     while (stage < nl) {
         for (var i = 1; i <= stage; i++) {
+            var postfix = (stage === 1) ? "nd" : "th";
             json.finals["l"+l] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                  "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}};
+                                  "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix, "number":i}};
 
             //Generate revenge (r) stages for all losers in winners bracket
             if (stage <= 4) {
                 //Add r match pointing
                 json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                          "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}};
+                                          "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i}};
+                //Fix next is final
+                if (Math.floor(l/2) === 0) json.finals["l"+l+"r"].next.game = "0";
 
                 //Modify earlier created match to point to revenge match instead
                 json.finals["l"+l].next.game = "l"+l+"r";
                 //Change team to away (loser from wb always home)
                 json.finals["l"+l].next.team = "away";
+                //Append stage 1 to earlier
+                json.finals["l"+l].stage.name += " stage 1";
             }
 
             l += 1;
         }
         stage *= 2;
     }
-    console.log("Finals generated");
-    console.log(json.finals);
+    //console.log("Finals generated");
+    //console.log(json.finals);
     
     
     //Fill winners bracket first stage matches from order
@@ -269,7 +268,7 @@ var generateBracket = function(json) {
 
     return json.finals;
 }
-
+ 
 
 var moveBracket = function(json, next, team) {
     var other = (next.team === "home") ? "away" : "home";
@@ -278,10 +277,6 @@ var moveBracket = function(json, next, team) {
     //Set team in next game
     json.finals[next.game].teams[next.team] = team;
 
-    console.log("Move Bracket:");
-    console.log(next);
-    console.log(team);
-    
     //If the other team left walk over
     if (json.finals[next.game].teams[other] === "WALKOVER") {
         json.finals[next.game].played = true;
@@ -358,13 +353,81 @@ var chatResult = function(result, json, state) {
     }
 
     //If league, add league table
-    text += "\n\n*Current league table:*"
-    json.table.map(function(r) {
-        text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+")";
-    });
-    
-    //If finals, add finals brackets
+    //if (Object.values(json.league).filter(function(m){return !m.played}).length < 0) {
+    if (state === "league" || state === "league done") {
+        text += "\n\n*Current league table:*"
+        json.table.map(function(r) {
+            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+")";
+        });
+    }
+    if (state === "final" || state === "league done" || state === "winner") {
+        //If finals, add finals brackets
+        text += "\n\n*Finals:*"
+        
+        var sorted = {};
+        
+        Object.keys(json.finals).forEach(function(k) {
+            var m = json.finals[k];
+            if (!((m.played && (m.teams.home === "" || m.teams.away === "")) ||
+                  m.teams.home === "WALKOVER" || m.teams.away === "WALKOVER")) {
+                if (!sorted.hasOwnProperty(m.stage.name)) sorted[m.stage.name] = [];
 
+                sorted[m.stage.name].push(m);
+                
+                //text += "\n"+k+" \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>";
+            }
+        });
+
+        //Sort keys for presentation
+        var keys = Object.keys(sorted).sort(function(a,b) {
+            //Final goes first
+            if (a === "Final") return -1;
+            if (b === "Final") return 1;
+            //Then Winners X<Y:th
+            var as = a.split(" ");
+            var bs = b.split(" ");
+            if (as[0] === "Winners" && bs[0] != "Winners") return -1;
+            if (bs[0] === "Winners" && as[0] != "Winners") return -1;
+            if (as[0] === "Winners" && bs[0] === "Winners") {
+                if (as[1] <= bs[1]) return -1;
+                else return 1;
+            }
+            //Then Losers X<Y:th stage x>y
+            if (as[1] < bs[1]) return -1;
+            if (as[1] > bs[1]) return 1;
+            if (as.length === 4 && bs.length === 4) {
+                if (as[3] < bs[3]) return 1;
+                else -1;
+            }
+            return -1;
+        });
+        
+        keys.forEach(function(k) {
+            text += "\n\n*" + sorted[k][0].stage.name + ":*"
+            sorted[k].forEach(function(m) {
+                if (m.teams.home === "WALKOVER" || m.teams.away === "WALKOVER") {
+                    //dont print
+                } else if (m.played && m.teams.home != "" && m.teams.away != "") {
+                    text += "\n_~"+m.stage.number+": \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>~_ "+m.goals.home+" - "+m.goals.away;
+                } else if (m.teams.home != "" && m.teams.away != "") {
+                    text += "\n*"+m.stage.number+": \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>*";
+                } else if (m.teams.home === "" && m.teams.away === "") {
+                    text += "\n"+m.stage.number+": TBD - TBD";
+                } else if (m.teams.home === "") {
+                    text += "\n"+m.stage.number+": TBD - \<\@"+m.teams.away+"\>";
+                } else if (m.teams.away === "") {
+                    text += "\n"+m.stage.number+": \<\@"+m.teams.home+"\> - TBD";
+                }
+            });
+        });
+    }
+    if (state === "winner") {
+        //TODO: Print final rank
+        var winner = (result.hg > result.ag) ? result.ht : result.at;
+        text += "\n\n*\<\@"+winner+"\> is the winner!*";
+    }
+    
+    
     //Print chat
     web.chat.postMessage({channel: json.public, text: text})
         .then((res) => {
@@ -373,7 +436,6 @@ var chatResult = function(result, json, state) {
         })
         .catch(console.error);
 }
-
 
 
 //Handle data post
@@ -437,9 +499,17 @@ app.post("/api/:type", function(req, res) {
 
                     //Generate league table
                     json.table = generateTable(json);
-                    
-                    //Channel response
-                    chatResult(result, json, true);
+
+                    //Count again if there are any league games left
+                    if (Object.values(json.league).filter(function(m){return !m.played}).length === 0) {
+                        //If not, generate final brackets
+                        console.log("GENERATE FINAL BRACKETS");
+                        json.finals = generateBracket(json);
+                        chatResult(result, json, "league done");
+                    } else {
+                        //Channel response
+                        chatResult(result, json, "league");
+                    }
                     res.send("Result \<\@"+result.ht+"\>-\<\@"+result.at+"\> ("+result.hg+"-"+result.ag+") recorded");
                 }
                 //Else check return game
@@ -453,24 +523,63 @@ app.post("/api/:type", function(req, res) {
                     //Generate league table
                     json.table = generateTable(json);
 
-                    //Channel response
-                    chatResult(result, json, true);
+                    //Count again if there are any league games left
+                    if (Object.values(json.league).filter(function(m){return !m.played}).length === 0) {
+                        //If not, generate final brackets
+                        console.log("GENERATE FINAL BRACKETS");
+                        json.finals = generateBracket(json);
+                        chatResult(result, json, "league done");
+                    } else {
+                        //Channel response
+                        chatResult(result, json, "league");
+                    }
                     res.send("Result \<\@"+result.at+"\>-\<\@"+result.ht+"\> ("+result.ag+"-"+result.hg+") recorded");
                 }
                 //Else the teams should not meet
                 else {
                     res.send("Teams have already met twice");
                 }
-                
-                //Count again if there are any league games left
-                if (Object.values(json.league).filter(function(m){return !m.played}).length === 0) {
-                    //If not, generate final brackets
-                    console.log("GENERATE FINAL BRACKETS");
-                    json.finals = generateBracket(json);
-                }
             } else {
                 //FINALS GAME
-                res.send("Final game");
+                var ok = false;
+                Object.keys(json.finals).some(function(k) {
+                    var game = json.finals[k];
+                    if (game.played === false) {
+                        if ((game.teams.home === result.ht && game.teams.away === result.at) ||
+                            (game.teams.away === result.ht && game.teams.home === result.at)) {
+                            //Register result
+                            game.played = true;
+                            game.goals.home = (game.teams.home === result.ht) ? result.hg : result.ag;
+                            game.goals.away = (game.teams.home === result.ht) ? result.ag : result.hg;
+                            game.date = Date.now();
+
+                            var winner = (result.hg > result.ag) ? result.ht : result.at;
+                            var loser = (result.hg < result.ag) ? result.ht : result.at;
+                            
+                            //Move winner forward
+                            if (k === "0") {
+                                chatResult(result, json, "winner");
+                                res.send("Result \<\@"+result.ht+"\>-\<\@"+result.at+"\> ("+result.hg+"-"+result.ag+") recorded");
+                                ok = true;
+                                return true;
+                            }
+                            moveBracket(json, game.next, winner);
+                            
+                            //Move loser to lower bracket (if in wb)
+                            if (k[0] === 'w') {
+                                var next = {"game":"l"+k.substring(1)+"r", "team":"home"};
+                                moveBracket(json, next, loser);
+                            }
+                            
+                            chatResult(result, json, "final");
+                            res.send("Result \<\@"+result.ht+"\>-\<\@"+result.at+"\> ("+result.hg+"-"+result.ag+") recorded");
+                            ok = true;
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+                if (!ok) res.send("No such game");
             }
             
             //json.results.push(req.body);
@@ -486,12 +595,19 @@ app.post("/api/:type", function(req, res) {
     else if (type === "games") {
         var u = json.users[entry.user_name].user_id;
         if (entry.text != "") u = json.users[entry.text.substring(1)].user_id;
-
+        
         var text = "*Games available for \<\@" + u + "\>:*";
-        Object.values(json.league).map(function(m) {
-            if (m.teams.home === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-            else if (m.teams.away === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-        });
+        if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
+            Object.values(json.league).map(function(m) {
+                if (m.teams.home === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+                else if (m.teams.away === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+            });
+        } else {
+            Object.values(json.finals).map(function(m) {
+                if (m.teams.home === u && m.teams.away != "" && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+                else if (m.teams.away === u && m.teams.home != "" && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+            });
+        }
         res.send(text);
     }
 
