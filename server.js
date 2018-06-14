@@ -148,7 +148,7 @@ var generateBracket = function(json) {
 
     //Generate winners bracket team order (1 8 4 5 2 7 3 6)
     var nw = (n > 8) ? 8 : n;
-    var order = getOrder(8,0);//getOrder(nw,0);
+    var order = getOrder(nw,0);
     console.log("Order of winners bracket " + order);
 
     //Generate static winners bracket
@@ -158,7 +158,7 @@ var generateBracket = function(json) {
     var stage = 1;
     var team = ["away", "home"];
     var w = 1;
-    while (stage < 8) {//nw) {
+    while (stage < nw) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
@@ -185,7 +185,7 @@ var generateBracket = function(json) {
                                   "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix, "number":i}};
 
             //Generate revenge (r) stages for all losers in winners bracket
-            if (stage <= 4) {
+            if (stage < nw) {
                 //Add r match pointing
                 json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
                                           "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i}};
