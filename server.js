@@ -148,7 +148,7 @@ var generateBracket = function(json) {
 
     //Generate winners bracket team order (1 8 4 5 2 7 3 6)
     var nw = (n > 8) ? 8 : n;
-    var order = getOrder(nw,0);
+    var order = getOrder(8,0);//getOrder(nw,0);
     console.log("Order of winners bracket " + order);
 
     //Generate static winners bracket
@@ -158,7 +158,7 @@ var generateBracket = function(json) {
     var stage = 1;
     var team = ["away", "home"];
     var w = 1;
-    while (stage < nw) {
+    while (stage < 8) {//nw) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
@@ -217,9 +217,20 @@ var generateBracket = function(json) {
         } else {
             console.log("Team " + position + " does not exist");
             //No team, move "winning" team to next
-            json.finals["w"+Math.floor(w/2)].played = true;
+            var other = json.finals["w"+Math.floor(w/2)].teams[team[(w+1)%2]];
             var next = json.finals["w"+Math.floor(w/2)].next;
-            moveBracket(json, next, json.finals["w"+Math.floor(w/2)].teams[team[(w+1)%2]]);
+            json.finals["w"+Math.floor(w/2)].played = true;
+
+            if(other != "") {
+                //move "winning" team to next
+                moveBracket(json, next, other);
+                //json.finals[next.game].teams[next.team] = other;
+            } else {
+                //If no teams, "next" will be walk over
+                moveBracket(json, next, "WALKOVER");
+                //json.finals[next.game].teams[next.team] = "WALKOVER";
+            }
+            
             //json.finals[next.game].teams[next.team] = json.finals["w"+Math.floor(w/2)].teams[team[(w+1)%2]];
             
             //Also move team in losing bracket
@@ -332,7 +343,14 @@ var processResult = function(d, json) {
 //Chat posts (into public channel)
 var chatSignup = function(user, json) {
     //res.json({response_type: "in_channel", text: "\<\@" + u + "\> was added to the league!"}); //echo back
-    web.chat.postMessage({channel: json.public, text: "\<\@" + user + "\> was added to the league!"})
+    var text = "\<\@" + user + "\> was added to the league!";
+
+    text += "\n\n*League members:*"
+    json.table.map(function(r) {
+        text += "\n\<\@"+r.name+"\>";
+    });
+
+    web.chat.postMessage({channel: json.public, text: text})
         .then((res) => {
             // `res` contains information about the posted message
             console.log("Message sent to public channel: ", res.ts);
@@ -393,8 +411,8 @@ var chatResult = function(result, json, state) {
                 else return 1;
             }
             //Then Losers X<Y:th stage x>y
-            if (as[1] < bs[1]) return -1;
-            if (as[1] > bs[1]) return 1;
+            if (parseInt(as[1].substring(0,as[1].length-2)) < parseInt(bs[1].substring(0,bs[1].length-2))) return -1;
+            if (parseInt(as[1].substring(0,as[1].length-2)) > parseInt(bs[1].substring(0,bs[1].length-2))) return 1;
             if (as.length === 4 && bs.length === 4) {
                 if (as[3] < bs[3]) return 1;
                 else -1;
