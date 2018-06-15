@@ -375,7 +375,7 @@ var chatResult = function(result, json, state) {
     if (state === "league" || state === "league done") {
         text += "\n\n*Current league table:*"
         json.table.map(function(r) {
-            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+")";
+            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+", "+r.gp+")";
         });
     }
     if (state === "final" || state === "league done" || state === "winner") {
@@ -419,23 +419,25 @@ var chatResult = function(result, json, state) {
             }
             return -1;
         });
-        
+
+        //Format brakcet print
         keys.forEach(function(k) {
             text += "\n\n*" + sorted[k][0].stage.name + ":*"
             sorted[k].forEach(function(m) {
-                if (m.teams.home === "WALKOVER" || m.teams.away === "WALKOVER") {
-                    //dont print
-                } else if (m.played && m.teams.home != "" && m.teams.away != "") {
-                    text += "\n_~"+m.stage.number+": \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>~_ "+m.goals.home+" - "+m.goals.away;
-                } else if (m.teams.home != "" && m.teams.away != "") {
-                    text += "\n*"+m.stage.number+": \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>*";
-                } else if (m.teams.home === "" && m.teams.away === "") {
-                    text += "\n"+m.stage.number+": TBD - TBD";
-                } else if (m.teams.home === "") {
-                    text += "\n"+m.stage.number+": TBD - \<\@"+m.teams.away+"\>";
-                } else if (m.teams.away === "") {
-                    text += "\n"+m.stage.number+": \<\@"+m.teams.home+"\> - TBD";
-                }
+                var home = "\<\@"+m.teams.home+"\>";
+                var away = "\<\@"+m.teams.away+"\>";
+
+                //Calculate which team that will end up "here"
+                if (m.teams.home === "") home = "TBD";
+                if (m.teams.away === "") away = "TBD";
+                
+                //Played games are strikethrough, playable games are bold
+                text += "\n";
+                if (m.played) text += "~";
+                else if (m.teams.home != "" && m.teams.away != "") text += "*";
+                text += m.stage.number+": "+home+" - "+away;
+                if (m.played) text += "~";
+                else if (m.teams.home != "" && m.teams.away != "") text += "*";
             });
         });
     }
@@ -633,7 +635,7 @@ app.post("/api/:type", function(req, res) {
     else if (type === "table") {
         text = "*League table:*";
         json.table.map(function(r) {
-            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+")";
+            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+", "+r.gp+")";
         });
         res.send(text);
     }
