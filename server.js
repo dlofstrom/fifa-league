@@ -153,18 +153,25 @@ var generateBracket = function(json) {
 
     //Generate static winners bracket
     json.finals["0"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                        "next":{"game":"done", "team":""}, "stage":{"name":"Final", "number":0}};
+                        "next":{"game":"done", "team":""},
+                        "stage":{"name":"Final", "number":1},
+                        "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
 
     var stage = 1;
-    var team = ["away", "home"];
+    var team = ["home", "away"];
     var w = 1;
     while (stage < nw) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                  "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]}, "stage":{"name":"Winners "+2*stage+postfix, "number":i}};
+                                  "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]},
+                                  "stage":{"name":"Winners "+2*stage+postfix, "number":i},
+                                  "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
             //Fix next is final
-            if (Math.floor(w/2) === 0) json.finals["w"+w].next.game = "0";
+            if (Math.floor(w/2) === 0) {
+                json.finals["w"+w].next.game = "0";
+                json.finals["w"+w].next.team = "home";
+            }
             w += 1;
         }
         stage *= 2;
@@ -182,15 +189,22 @@ var generateBracket = function(json) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["l"+l] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                  "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix, "number":i}};
+                                  "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
+                                  "stage":{"name":"Losers "+2*stage+postfix, "number":i},
+                                  "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
 
             //Generate revenge (r) stages for all losers in winners bracket
             if (stage < nw) {
                 //Add r match pointing
                 json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
-                                          "next":{"game":"l"+Math.floor(l/2), "team":team[(l+1)%2]}, "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i}};
+                                          "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
+                                          "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i},
+                                          "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
                 //Fix next is final
-                if (Math.floor(l/2) === 0) json.finals["l"+l+"r"].next.game = "0";
+                if (Math.floor(l/2) === 0) {
+                    json.finals["l"+l+"r"].next.game = "0";
+                    json.finals["l"+l+"r"].next.team = "away";
+                }
 
                 //Modify earlier created match to point to revenge match instead
                 json.finals["l"+l].next.game = "l"+l+"r";
@@ -277,9 +291,43 @@ var generateBracket = function(json) {
     //console.log("Finals filled");
     //console.log(json.finals);
 
+    //Propagate match parents
+    Object.keys(json.finals).forEach(function(k) {
+        var f = json.finals[k];
+        //Start from a game and move winner to next (if winners also move loser)
+        if (k != "0" && !f.played && f.teams.home != "WALKOVER" && f.teams.away != "WALKOVER") {
+            propagateParents(json, f.next.game, f.next.team, "Winner", f.stage.name, f.stage.number);
+            //If winner also move it forward
+            if (k[0] === 'w') {
+                //console.log("Propagating "+ "Loser"+f.stage.name+f.stage.number);
+                next = "l" + k.substring(1) + "r";
+                propagateParents(json, next, "home", "Loser", f.stage.name, f.stage.number);
+            }
+        }
+    });
+    //console.log("Parents filled");
+    //console.log(json.finals);
+    
     return json.finals;
 }
- 
+
+//e.g json, "w1", "home", "key", "number"
+//"parents":{"home":{"key":"", "number":0}, "away":{"key":"", "number":0}}};
+var propagateParents = function(json, game, team, result, key, number) {
+    //Keep recusion until child is found
+    var g = json.finals[game];
+    if (g.played || g.teams.home === "WALKOVER" || g.teams.away === "WALKOVER") {
+        //console.log(game, team, result, key, number, "LOOOP");
+        propagateParents(json, g.next.game, g.next.team, result, key, number);
+    } else {
+        //console.log(game, team, result, key, number, "DONE");
+        g.parents[team].result = result;
+        var ks = key.split(" ");
+        g.parents[team].key = ks[0][0]+ks[1].substring(0,ks[1].length-2);
+        if (ks.length === 4) g.parents[team].key += "s"+ks[3];
+        g.parents[team].number = number;
+    }
+}
 
 var moveBracket = function(json, next, team) {
     var other = (next.team === "home") ? "away" : "home";
@@ -421,25 +469,51 @@ var chatResult = function(result, json, state) {
         });
 
         //Format brakcet print
-        keys.forEach(function(k) {
+        //keys.forEach(function(k) {
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
             text += "\n\n*" + sorted[k][0].stage.name + ":*"
+            var ks = k.split(" ");
             sorted[k].forEach(function(m) {
                 var home = "\<\@"+m.teams.home+"\>";
                 var away = "\<\@"+m.teams.away+"\>";
 
                 //Calculate which team that will end up "here"
-                if (m.teams.home === "") home = "TBD";
-                if (m.teams.away === "") away = "TBD";
+                //if (m.teams.home === "") home = "TBD";
+                //if (m.teams.away === "") away = "TBD";
+                /*
+                var s = 2;
+                var g = m.stage.number;
+                var p = (i+1 < keys.length) ? keys[i+1].split(" "): keys[i].split(" ");
+                if (ks[0] === "Final") {
+                    if (m.teams.home === "") home = "Winner W2-1";
+                    if (m.teams.away === "") away = "Winner L2s2-1";
+                } else if (ks.length === 4 && ks[3] === "2") {
+                    if (m.teams.home === "") home = "Loser W"+ks[1].substring(0,ks[1].length-2)+"-"+g;
+                    if (m.teams.away === "") away = "Winner L"+ks[1].substring(0,ks[1].length-2)+"s1-"+g;
+                } else {
+                    if (p.length === 4) {
+                        if (m.teams.home === "") home = "Winner "+p[0][0]+p[1].substring(0,p[1].length-2)+"s"+p[3]+"-"+(2*g-1);
+                        if (m.teams.away === "") away = "Winner "+p[0][0]+p[1].substring(0,p[1].length-2)+"s"+p[3]+"-"+(2*g);
+                    } else {
+                        if (m.teams.home === "") home = "Winner "+p[0][0]+p[1].substring(0,p[1].length-2)+"-"+(2*g-1);
+                        if (m.teams.away === "") away = "Winner "+p[0][0]+p[1].substring(0,p[1].length-2)+"-"+(2*g);
+                    }
+                }
+                */
+                if (m.teams.home === "") home = m.parents.home.result+" "+m.parents.home.key+"-"+m.parents.home.number;
+                if (m.teams.away === "") away = m.parents.away.result+" "+m.parents.away.key+"-"+m.parents.away.number;
                 
                 //Played games are strikethrough, playable games are bold
                 text += "\n";
-                if (m.played) text += "~";
+                if (m.played) text += "~_";
                 else if (m.teams.home != "" && m.teams.away != "") text += "*";
                 text += m.stage.number+": "+home+" - "+away;
-                if (m.played) text += "~";
+                if (m.played) text += "_~";
                 else if (m.teams.home != "" && m.teams.away != "") text += "*";
             });
-        });
+            //});
+        }
     }
     if (state === "winner") {
         //TODO: Print final rank
