@@ -408,13 +408,14 @@ var chatSignup = function(user, json) {
 var chatResult = function(result, json, state) {
     var text = "";
     //First add match text
+    text += "*Game played:*\n";
     if (result != "") {
         if (result.hg > result.ag)
-            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and won ("+result.hg+"-"+result.ag+")";
+            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and won ("+result.hg+"-"+result.ag+") :soccer:";
         else if (result.hg < result.ag)
-            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and lost ("+result.hg+"-"+result.ag+")";
+            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and lost ("+result.hg+"-"+result.ag+") :soccer:";
         else
-            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and the result was a draw ("+result.hg+"-"+result.ag+")";
+            text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and the result was a draw ("+result.hg+"-"+result.ag+") :soccer:";
     }
 
     //If league, add league table
@@ -489,7 +490,7 @@ var chatResult = function(result, json, state) {
     if (state === "winner") {
         var winner = (result.hg > result.ag) ? result.ht : result.at;
         var loser = (result.hg > result.ag) ? result.at : result.ht;
-        text += "\n\n*\<\@"+winner+"\> is the winner!*";
+        text += "\n\n*\<\@"+winner+"\> is the winner!* :tada:";
 
         //Print final rank
         text += "\n\n*Final rank:*";
