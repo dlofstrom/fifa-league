@@ -731,12 +731,67 @@ app.post("/api/:type", function(req, res) {
 
     //Print help and rules
     else if (type === "rules") {
-        res.send("TODO");
+        var text = "*Game Format*\nThe league is played in two stages, the league stage and the final stage.";
+        text += "\n\n*League stage*\nIn the league stage all teams meet each other twice (home and away) a win gives three (3) points and a draw gives one (1) point, the teams are sorted in a table primarily based on points, then goal difference and goals made. The league table rank determines the entry point in the final stage of the game.";
+        text += "\n\n*Final stage*\nWhen all league games are played the teams are sorted in the final brackets for the final stage. A double elimination bracket (https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. The winner from the winners and losers bracket plays the final game and determines the winner.";
+        text += "\n\n*Slack commands*";
+        text += "\n`/rules` displays this message";
+        text += "\n`/signup` registers user (you) with slack user handle as team name";
+        text += "\n`/result @hometeam @awayteam result(e.g 3-1)` registers a game result";
+        text += "\n`/games @team` displays available games for team";
+        text += "\n`/table` prints league table";
+        text += "\n`/stats @team` prints more details about a team";
+        text += "\n`/history` prints all games played in order";
+        res.send(text);
     }
 
     //Print detailed stats
     else if (type === "stats") {
-        res.send("TODO");
+        var u = json.users[entry.user_name].user_id;
+        if (entry.text != "") u = json.users[entry.text.substring(1)].user_id;
+
+        var text = "*Stats for team \<\@"+u+"\>:*";
+        var row = json.table.find(function(r) {return r.name === u});
+        text += "\nTable position: "+row.pos;
+        text += "\nGames Played: "+row.gp;
+        text += "\nWins: "+row.w;
+        text += "\nDraws: "+row.d;
+        text += "\nLosses: "+row.l;
+        text += "\nGoals for: "+row.f;
+        text += "\nGoals against: "+row.a;
+        text += "\nGoal difference: "+row.gd;
+        text += "\nPoints: "+row.pts;
+        text += "\nForm: "+row.form;
+        res.send(text);
+    }
+
+    //Print all games played
+    else if (type === "history") {
+        var text = "*League games played:*";
+        Object.values(json.league).filter(function(m) {
+            return (m.played && m.teams.home!="" && m.teams.away!="" && m.teams.home!="WALKOVER" && m.teams.away!="WALKOVER");
+        }).sort(function(a,b) {
+            return a.date - b.date;
+        }).forEach(function(m) {
+            var d = new Date(m.date);
+            text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
+            text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+        });
+        
+        if (json.finals) {
+            text += "\n\n*Final games played:*";
+            Object.values(json.finals).filter(function(m) {
+                return (m.played && m.teams.home!="" && m.teams.away!="" && m.teams.home!="WALKOVER" && m.teams.away!="WALKOVER");
+            }).sort(function(a,b) {
+                return a.date - b.date;
+            }).forEach(function(m) {
+                var d = new Date(m.date);
+                text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
+                text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+            });
+        }
+
+        res.send(text);
     }
 
 
@@ -784,8 +839,12 @@ app.post("/api/:type", function(req, res) {
 
     //Remove team
     else if (type === "drop") {
-        res.send("TODO");
-
+        if (json.admin.user === json.users[entry.user_name].user_id &&
+            json.admin.channel === entry.channel_id) {
+            //TODO: go throug teams and league and remove user, if finals it is not possible to dropout
+        } else {
+            res.send("Someone else is admin");
+        }
     }
 
 

@@ -1,5 +1,14 @@
 # FIFA league
-A FIFA league application using Slack as frontend
+A FIFA league application using Slack as frontend.
+
+## Game Format
+The league is played in two stages, the league stage and the final stage.
+
+### League stage
+In the league stage all teams meet each other twice (home and away) a win gives three (3) points and a draw gives one (1) point, the teams are sorted in a table primarily based on points, then goal difference and goals made. The league table rank determines the entry point in the final stage of the game.
+
+### Final stage
+When all league games are played the teams are sorted in the final brackets for the final stage. A [double elimination bracket](https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. the winner from the winners and losers bracket plays the final game and determines the winner.
 
 ## Setup
 - Install [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/)
@@ -23,6 +32,7 @@ Public commands:
 - `/games` @team displays available games for team
 - `/table` prints league table
 - `/stats` @team prints more details about a team
+- `/history` prints all games played in order
 
 ## Setup league
 - In your private channel with Slack app write `/admin`
