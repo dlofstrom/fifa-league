@@ -25,11 +25,13 @@ Games in the Final stage are played full time, classic extra time followed by pe
 
 ## Slack commands
 In the Slack app, setup the following slash commands, all pointing to the https domain provided by ngrok followed by `/api/command-name`
+
 Admin commands:
 - `/admin` sets current user and channel to admin channel, only works once
 - `/public` sets current channel to the official channel for results, so that private chats wont work
 - `/drop` @team removes team and all results from league
 - `/undo @hometeam @awayteam result(e.g 3-1)` removes a game result
+
 Public commands:
 - `/rules` displays all commands and league rules
 - `/signup` registers user with slack user handle as team name
