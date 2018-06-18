@@ -20,7 +20,7 @@ Games in the Final stage are played full time, classic extra time followed by pe
 - Run `npm install` and `node server.js`
 - Setup a Slack app and create an event subscription pointing to the https domain provided by ngrok followed by `/api/user`
 - Set the event subscription to post when a user joins and when a user changes information
-- Create a Boy user in the Slack app
+- Create a Bot user in the Slack app
 - Save the Bot User OAuth Access Token in root folder `echo -n TOKEN > bot-token`
 
 ## Slack commands
