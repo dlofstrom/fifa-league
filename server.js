@@ -861,6 +861,30 @@ app.post("/api/:type", function(req, res) {
         }
     }
 
+    //Undo game
+    else if (type === "undo") {
+        if (json.admin.user === json.users[entry.user_name].user_id &&
+            json.admin.channel === entry.channel_id) {
+            //Go through league games and undo a game
+            if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
+                var result = processResult(entry.text, json);
+                //If result is correctly formatted
+                if (result.valid) {
+                    if (json.league[result.ht + "-" + result.at].played) {
+                        //Clear
+                        json.league[result.ht + "-" + result.at].played = false;
+                        json.league[result.ht + "-" + result.at].goals.home = 0;
+                        json.league[result.ht + "-" + result.at].goals.away = 0;
+                        json.league[result.ht + "-" + result.at].date = 0;
+                    }
+                }
+            } else {
+                res.send("Undo only works for league games (for now)");
+            }
+        } else {
+            res.send("Someone else is admin");
+        }
+    }
 
     
     //Event subscription when a user changed information or someone joined the channel

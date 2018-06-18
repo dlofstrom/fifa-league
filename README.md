@@ -29,6 +29,7 @@ Admin commands:
 - `/admin` sets current user and channel to admin channel, only works once
 - `/public` sets current channel to the official channel for results, so that private chats wont work
 - `/drop` @team removes team and all results from league
+- `/undo @hometeam @awayteam result(e.g 3-1)` removes a game result
 Public commands:
 - `/rules` displays all commands and league rules
 - `/signup` registers user with slack user handle as team name
@@ -36,7 +37,6 @@ Public commands:
 - `/games` @team displays available games for team
 - `/table` prints league table
 - `/finals` prints final brackets
-- `/table` prints league table
 - `/stats` @team prints more details about a team
 - `/history` prints all games played in order
 
