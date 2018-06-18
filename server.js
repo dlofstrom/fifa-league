@@ -11,6 +11,7 @@ var path = __dirname;
 var token = fs.readFileSync(path + "/bot-token", "utf8");
 const web = new WebClient(token);
 
+var emoji = [":hotdog:",":taco:",":burrito:",":chestnut:",":seedling:",":evergreen_tree:",":deciduous_tree:",":palm_tree:",":cactus:",":hot_pepper:",":tulip:",":cherry_blossom:",":rose:",":hibiscus:",":sunflower:",":blossom:",":corn:",":ear_of_rice:",":herb:",":four_leaf_clover:",":maple_leaf:",":fallen_leaf:",":leaves:",":mushroom:",":tomato:",":eggplant:",":grapes:",":melon:",":watermelon:",":tangerine:",":lemon:",":banana:",":pineapple:",":apple:",":green_apple:",":pear:",":peach:",":cherries:",":strawberry:",":hamburger:",":pizza:",":meat_on_bone:",":poultry_leg:",":rice_cracker:",":rice_ball:",":rice:",":curry:",":ramen:",":spaghetti:",":bread:",":fries:",":sweet_potato:",":dango:",":oden:",":sushi:",":fried_shrimp:",":fish_cake:",":icecream:",":shaved_ice:",":ice_cream:",":doughnut:",":cookie:",":chocolate_bar:",":candy:",":lollipop:",":custard:",":honey_pot:",":cake:",":bento:",":stew:",":fried_egg:",":fork_and_knife:",":tea:",":sake:",":wine_glass:",":cocktail:",":tropical_drink:",":beer:",":rat:",":mouse2:",":ox:",":water_buffalo:",":cow2:",":tiger2:",":leopard:",":rabbit2:",":cat2:",":dragon:",":crocodile:",":whale2:",":snail:",":snake:",":racehorse:",":ram:",":goat:",":sheep:",":monkey:",":rooster:",":chicken:",":dog2:",":pig2:",":boar:",":elephant:",":octopus:",":shell:",":bug:",":ant:",":bee:",":beetle:",":fish:",":tropical_fish:",":blowfish:",":turtle:",":hatching_chick:",":baby_chick:",":hatched_chick:",":bird:",":penguin:",":koala:",":poodle:",":dromedary_camel:",":camel:",":dolphin:",":mouse:",":cow:",":tiger:",":rabbit:",":cat:",":dragon_face:",":whale:",":horse:",":monkey_face:",":dog:",":pig:",":frog:",":hamster:",":wolf:",":bear:",":panda_face:",":chipmunk:",":wave:",":ok_hand:",":+1:",":-1:",":clap:",":skull:",":bomb:",":zzz:",":hankey:",":muscle:",":fire:",":joystick:",":man_dancing:",":raised_hand_with_fingers_splayed:",":middle_finger:",":spock-hand:",":see_no_evil:",":hear_no_evil:",":speak_no_evil:",":police_car:",":toilet:",":motor_boat:",":small_airplane:",":airplane_departure:",":airplane_arriving:",":satellite:",":scooter:",":motor_scooter:",":canoe:",":zipper_mouth_face:",":money_mouth_face:",":face_with_thermometer:",":nerd_face:",":thinking_face:",":face_with_head_bandage:",":robot_face:",":hugging_face:",":the_horns:",":call_me_hand:",":raised_back_of_hand:",":left-facing_fist:",":right-facing_fist:",":handshake:",":crossed_fingers:",":face_with_cowboy_hat:",":clown_face:",":nauseated_face:",":rolling_on_the_floor_laughing:",":drooling_face:",":lying_face:",":woman-facepalming:",":man-facepalming:",":face_palm:",":woman-shrugging:",":man-shrugging:",":shrug:",":drum_with_drumsticks:",":clinking_glasses:",":tumbler_glass:",":spoon:",":goal_net:",":first_place_medal:",":second_place_medal:",":third_place_medal:",":boxing_glove:",":martial_arts_uniform:",":croissant:",":avocado:",":cucumber:",":bacon:",":potato:",":carrot:",":baguette_bread:",":green_salad:",":shallow_pan_of_food:",":stuffed_flatbread:",":egg:",":glass_of_milk:",":peanuts:",":kiwifruit:",":crab:",":lion_face:",":scorpion:",":turkey:",":unicorn_face:",":eagle:",":duck:",":bat:",":shark:",":owl:",":fox_face:",":butterfly:",":deer:",":gorilla:",":lizard:",":rhinoceros:",":shrimp:",":squid:",":cheese_wedge:",":alarm_clock:",":hourglass_flowing_sand:",":sunny:",":cloud:",":umbrella:",":snowman:",":comet:",":coffee:",":shamrock:",":point_up:",":skull_and_crossbones:",":radioactive_sign:",":biohazard_sign:",":white_frowning_face:",":relaxed:",":female_sign:",":male_sign:",":spades:",":clubs:",":hearts:",":diamonds:",":recycle:",":hammer_and_pick:",":anchor:",":crossed_swords:",":gear:",":warning:",":zap:",":coffin:",":soccer:",":boat:",":tent:",":airplane:",":fist:",":hand:",":v:",":heart:",":star:"];
 
 var getJSON = function() {
     var json = {};
@@ -405,6 +406,118 @@ var chatSignup = function(user, json) {
         .catch(console.error);
 }
 
+var printLeague = function(json) {
+    var text = "*Current league table:*"
+    json.table.map(function(r) {
+        text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+", "+r.gp+")";
+    });
+    return text;
+}
+
+var printFinals = function(json) {
+    var text = "*Finals:*"
+    var sorted = {};
+    
+    Object.keys(json.finals).forEach(function(k) {
+        var m = json.finals[k];
+        if (!((m.played && (m.teams.home === "" || m.teams.away === "")) ||
+              m.teams.home === "WALKOVER" || m.teams.away === "WALKOVER")) {
+            if (!sorted.hasOwnProperty(m.stage.name)) sorted[m.stage.name] = [];
+
+            sorted[m.stage.name].push(m);
+        }
+    });
+
+    //Sort keys for presentation
+    var keys = Object.keys(sorted).sort(function(a,b) {
+        //Final goes first
+        if (a === "Final") return -1;
+        if (b === "Final") return 1;
+        //Then Winners X<Y:th
+        var as = a.split(" ");
+        var bs = b.split(" ");
+        if (as[0] === "Winners" && bs[0] != "Winners") return -1;
+        if (bs[0] === "Winners" && as[0] != "Winners") return -1;
+        if (as[0] === "Winners" && bs[0] === "Winners") {
+            if (as[1] <= bs[1]) return -1;
+            else return 1;
+        }
+        //Then Losers X<Y:th stage x>y
+        if (parseInt(as[1].substring(0,as[1].length-2)) < parseInt(bs[1].substring(0,bs[1].length-2))) return -1;
+        if (parseInt(as[1].substring(0,as[1].length-2)) > parseInt(bs[1].substring(0,bs[1].length-2))) return 1;
+        if (as.length === 4 && bs.length === 4) {
+            if (as[3] < bs[3]) return 1;
+            else -1;
+        }
+        return -1;
+    });
+
+    //Format brakcet print
+    keys.forEach(function(k) {
+        text += "\n\n*" + sorted[k][0].stage.name + ":*"
+        var ks = k.split(" ");
+        sorted[k].forEach(function(m) {
+            var home = "\<\@"+m.teams.home+"\>";
+            var away = "\<\@"+m.teams.away+"\>";
+            if (m.teams.home === "") home = m.parents.home.result+" "+m.parents.home.key+"-"+m.parents.home.number;
+            if (m.teams.away === "") away = m.parents.away.result+" "+m.parents.away.key+"-"+m.parents.away.number;
+            //Played games are strikethrough, playable games are bold
+            text += "\n";
+            if (m.played) text += "_~";
+            else if (m.teams.home != "" && m.teams.away != "") text += "*";
+            text += m.stage.number+": "+home+" - "+away;
+            if (m.played) text += "~ ("+m.goals.home+"-"+m.goals.away+")_";
+            else if (m.teams.home != "" && m.teams.away != "") text += "*";
+        });
+    });
+    return text;
+}
+
+var printRank = function(json, winner, loser) {
+    var text = "*Final rank:*";
+    //Go through losers bracket and collect stage teams 1 1 1 1 2 2 4 4 8 8...        
+    var rank = [winner, loser];
+    var stage = 1;
+    var l = 1;
+    var table = json.table
+    while (stage < table.length) {
+        var sr = [];
+        for (var i = 0; i < stage; i++) {
+            var k = "l"+(l+i)+"r";
+            if (json.finals.hasOwnProperty(k)) {
+                var teams = [].concat.apply([],rank);
+                var home = json.finals[k].teams.home;
+                var away = json.finals[k].teams.away;
+                if (home != "" && home != "WALKOVER" && !teams.includes(home)) sr.push(home);
+                if (away != "" && away != "WALKOVER" && !teams.includes(away)) sr.push(away);
+            }
+        }
+        rank.push(sr);
+        var s = [];
+        for (var i = 0; i < stage; i++) {
+            var k = "l"+(l+i);
+            if (json.finals.hasOwnProperty(k)) {
+                var teams = [].concat.apply([],rank);
+                var home = json.finals[k].teams.home;
+                var away = json.finals[k].teams.away;
+                if (home != "" && home != "WALKOVER" && !teams.includes(home)) sr.push(home);
+                if (away != "" && away != "WALKOVER" && !teams.includes(away)) sr.push(away);
+            }
+        }
+        rank.push(s);
+        l += stage
+        stage *= 2;
+    }
+    //Sort sub arrays based on leauge
+    var league = table.map(function(r){return r.name});
+    rank = rank.map(function(a){return league.filter(function(o){return a.includes(o)})});
+    rank = [].concat.apply([],rank);
+    rank.forEach(function(t,i) {
+        text += "\n"+(i+1)+" \<\@"+t+"\>";
+    });
+    return text;
+}
+
 var chatResult = function(result, json, state) {
     var text = "";
     //First add match text
@@ -421,121 +534,18 @@ var chatResult = function(result, json, state) {
     //If league, add league table
     //if (Object.values(json.league).filter(function(m){return !m.played}).length < 0) {
     if (state === "league" || state === "league done") {
-        text += "\n\n*Current league table:*"
-        json.table.map(function(r) {
-            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+", "+r.gp+")";
-        });
+        text += "\n\n" + printLeague(json);
     }
     if (state === "final" || state === "league done" || state === "winner") {
         //If finals, add finals brackets
-        text += "\n\n*Finals:*"
-        
-        var sorted = {};
-        
-        Object.keys(json.finals).forEach(function(k) {
-            var m = json.finals[k];
-            if (!((m.played && (m.teams.home === "" || m.teams.away === "")) ||
-                  m.teams.home === "WALKOVER" || m.teams.away === "WALKOVER")) {
-                if (!sorted.hasOwnProperty(m.stage.name)) sorted[m.stage.name] = [];
-
-                sorted[m.stage.name].push(m);
-                
-                //text += "\n"+k+" \<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\>";
-            }
-        });
-
-        //Sort keys for presentation
-        var keys = Object.keys(sorted).sort(function(a,b) {
-            //Final goes first
-            if (a === "Final") return -1;
-            if (b === "Final") return 1;
-            //Then Winners X<Y:th
-            var as = a.split(" ");
-            var bs = b.split(" ");
-            if (as[0] === "Winners" && bs[0] != "Winners") return -1;
-            if (bs[0] === "Winners" && as[0] != "Winners") return -1;
-            if (as[0] === "Winners" && bs[0] === "Winners") {
-                if (as[1] <= bs[1]) return -1;
-                else return 1;
-            }
-            //Then Losers X<Y:th stage x>y
-            if (parseInt(as[1].substring(0,as[1].length-2)) < parseInt(bs[1].substring(0,bs[1].length-2))) return -1;
-            if (parseInt(as[1].substring(0,as[1].length-2)) > parseInt(bs[1].substring(0,bs[1].length-2))) return 1;
-            if (as.length === 4 && bs.length === 4) {
-                if (as[3] < bs[3]) return 1;
-                else -1;
-            }
-            return -1;
-        });
-
-        //Format brakcet print
-        keys.forEach(function(k) {
-            text += "\n\n*" + sorted[k][0].stage.name + ":*"
-            var ks = k.split(" ");
-            sorted[k].forEach(function(m) {
-                var home = "\<\@"+m.teams.home+"\>";
-                var away = "\<\@"+m.teams.away+"\>";
-                if (m.teams.home === "") home = m.parents.home.result+" "+m.parents.home.key+"-"+m.parents.home.number;
-                if (m.teams.away === "") away = m.parents.away.result+" "+m.parents.away.key+"-"+m.parents.away.number;
-                //Played games are strikethrough, playable games are bold
-                text += "\n";
-                if (m.played) text += "_~";
-                else if (m.teams.home != "" && m.teams.away != "") text += "*";
-                text += m.stage.number+": "+home+" - "+away;
-                if (m.played) text += "~ ("+m.goals.home+"-"+m.goals.away+")_";
-                else if (m.teams.home != "" && m.teams.away != "") text += "*";
-            });
-        });
+        text += "\n\n" + printFinals(json);
     }
     if (state === "winner") {
         var winner = (result.hg > result.ag) ? result.ht : result.at;
         var loser = (result.hg > result.ag) ? result.at : result.ht;
         text += "\n\n*\<\@"+winner+"\> is the winner!* :tada:";
-
-        //Print final rank
-        text += "\n\n*Final rank:*";
-        //Go through losers bracket and collect stage teams 1 1 1 1 2 2 4 4 8 8...        
-        var rank = [winner, loser];
-        var stage = 1;
-        var l = 1;
-        var table = json.table
-        while (stage < table.length) {
-            var sr = [];
-            for (var i = 0; i < stage; i++) {
-                var k = "l"+(l+i)+"r";
-                if (json.finals.hasOwnProperty(k)) {
-                    var teams = [].concat.apply([],rank);
-                    var home = json.finals[k].teams.home;
-                    var away = json.finals[k].teams.away;
-                    if (home != "" && home != "WALKOVER" && !teams.includes(home)) sr.push(home);
-                    if (away != "" && away != "WALKOVER" && !teams.includes(away)) sr.push(away);
-                }
-            }
-            rank.push(sr);
-            var s = [];
-            for (var i = 0; i < stage; i++) {
-                var k = "l"+(l+i);
-                if (json.finals.hasOwnProperty(k)) {
-                    var teams = [].concat.apply([],rank);
-                    var home = json.finals[k].teams.home;
-                    var away = json.finals[k].teams.away;
-                    if (home != "" && home != "WALKOVER" && !teams.includes(home)) sr.push(home);
-                    if (away != "" && away != "WALKOVER" && !teams.includes(away)) sr.push(away);
-                }
-            }
-            rank.push(s);
-            l += stage
-            stage *= 2;
-        }
-        //Sort sub arrays based on leauge
-        var league = table.map(function(r){return r.name});
-        rank = rank.map(function(a){return league.filter(function(o){return a.includes(o)})});
-        rank = [].concat.apply([],rank);
-        rank.forEach(function(t,i) {
-            text += "\n"+(i+1)+" \<\@"+t+"\>";
-        });
+        text += "\n\n" + printRank(json, winner, loser);
     }
-    
     
     //Print chat
     web.chat.postMessage({channel: json.public, text: text})
@@ -722,25 +732,28 @@ app.post("/api/:type", function(req, res) {
 
     //Print table (private)
     else if (type === "table") {
-        text = "*League table:*";
-        json.table.map(function(r) {
-            text += "\n"+r.pts+" \<\@"+r.name+"\> ("+r.gd+", "+r.f+", "+r.gp+")";
-        });
-        res.send(text);
+        res.send(printLeague(json));
     }
 
+    //Print finals
+    else if (type === "finals") {
+        res.send(printFinals(json));
+    }
 
     //Print help and rules
     else if (type === "rules") {
         var text = "*Game Format*\nThe league is played in two stages, the league stage and the final stage.";
         text += "\n\n*League stage*\nIn the league stage all teams meet each other twice (home and away) a win gives three (3) points and a draw gives one (1) point, the teams are sorted in a table primarily based on points, then goal difference and goals made. The league table rank determines the entry point in the final stage of the game.";
+        text += "\n*_Games in the League stage are played full time, no extra time or tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same league team between 2-4 stars._*";
         text += "\n\n*Final stage*\nWhen all league games are played the teams are sorted in the final brackets for the final stage. A double elimination bracket (https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. The winner from the winners and losers bracket plays the final game and determines the winner.";
+        text += "\n*_Games in the Final stage are played full time, classic extra time followed by penalties for tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same (any) team between 4-5 stars._*"
         text += "\n\n*Slack commands*";
         text += "\n`/rules` displays this message";
         text += "\n`/signup` registers user (you) with slack user handle as team name";
         text += "\n`/result @hometeam @awayteam result(e.g 3-1)` registers a game result";
         text += "\n`/games @team` displays available games for team";
         text += "\n`/table` prints league table";
+        text += "\n`/finals` prints final brackets";
         text += "\n`/stats @team` prints more details about a team";
         text += "\n`/history` prints all games played in order";
         res.send(text);
@@ -762,7 +775,7 @@ app.post("/api/:type", function(req, res) {
         text += "\nGoals against: "+row.a;
         text += "\nGoal difference: "+row.gd;
         text += "\nPoints: "+row.pts;
-        text += "\nForm: "+row.form;
+        text += "\nForm: "+emoji[Math.floor(Math.random() * emoji.length)];//+row.form;
         res.send(text);
     }
 

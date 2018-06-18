@@ -7,8 +7,12 @@ The league is played in two stages, the league stage and the final stage.
 ### League stage
 In the league stage all teams meet each other twice (home and away) a win gives three (3) points and a draw gives one (1) point, the teams are sorted in a table primarily based on points, then goal difference and goals made. The league table rank determines the entry point in the final stage of the game.
 
+Games in the League stage are played full time, no extra time or tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same league team between 2-4 stars.
+
 ### Final stage
 When all league games are played the teams are sorted in the final brackets for the final stage. A [double elimination bracket](https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. the winner from the winners and losers bracket plays the final game and determines the winner.
+
+Games in the Final stage are played full time, classic extra time followed by penalties for tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same (any) team between 4-5 stars.
 
 ## Setup
 - Install [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/)
@@ -30,6 +34,8 @@ Public commands:
 - `/signup` registers user with slack user handle as team name
 - `/result @hometeam @awayteam result(e.g 3-1)` registers a game result
 - `/games` @team displays available games for team
+- `/table` prints league table
+- `/finals` prints final brackets
 - `/table` prints league table
 - `/stats` @team prints more details about a team
 - `/history` prints all games played in order
