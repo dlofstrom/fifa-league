@@ -1,6 +1,11 @@
 # FIFA league
 A FIFA league application using Slack as frontend.
 
+## TODO list
+- [ ] Save "who registered" a game in result
+- [ ] Continous backup of the data file
+- [ ] Stop writing everything in one file (:sweat_smile:)
+
 ## Game Format
 The league is played in two stages, the league stage and the final stage.
 
