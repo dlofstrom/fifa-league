@@ -153,7 +153,7 @@ var generateBracket = function(json) {
     console.log("Order of winners bracket " + order);
 
     //Generate static winners bracket
-    json.finals["0"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
+    json.finals["0"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                         "next":{"game":"done", "team":""},
                         "stage":{"name":"Final", "number":1},
                         "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
@@ -164,7 +164,7 @@ var generateBracket = function(json) {
     while (stage < nw) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
-            json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
+            json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                   "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]},
                                   "stage":{"name":"Winners "+2*stage+postfix, "number":i},
                                   "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
@@ -189,7 +189,7 @@ var generateBracket = function(json) {
     while (stage < nl) {
         for (var i = 1; i <= stage; i++) {
             var postfix = (stage === 1) ? "nd" : "th";
-            json.finals["l"+l] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
+            json.finals["l"+l] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                   "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
                                   "stage":{"name":"Losers "+2*stage+postfix, "number":i},
                                   "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
@@ -197,7 +197,7 @@ var generateBracket = function(json) {
             //Generate revenge (r) stages for all losers in winners bracket
             if (stage < nw) {
                 //Add r match pointing
-                json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0},
+                json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                           "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
                                           "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i},
                                           "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
