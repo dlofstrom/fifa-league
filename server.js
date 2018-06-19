@@ -794,6 +794,7 @@ app.post("/api/:type", function(req, res) {
             var d = new Date(m.date);
             text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
             text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+            text += " [\<\@"+m.registered+"\>]";
         });
         
         if (json.finals) {
