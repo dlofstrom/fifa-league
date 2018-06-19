@@ -345,8 +345,8 @@ var moveBracket = function(json, next, team) {
 }
 
 
-var processResult = function(d, json) {
-    r = {"valid":true, "ht":"", "at":"", "hg":0, "ag":0}
+var processResult = function(d, json, u) {
+    r = {"valid":true, "ht":"", "at":"", "hg":0, "ag":0, "registered":u};
     
     //data must contain 3 arguments separated by space (team team result)
     d = d.split(" ");
@@ -521,7 +521,7 @@ var printRank = function(json, winner, loser) {
 var chatResult = function(result, json, state) {
     var text = "";
     //First add match text
-    text += "*Game played:*\n";
+    text += "*Game played:* (registered by \<\@"+result.registered+"\>)\n";
     if (result != "") {
         if (result.hg > result.ag)
             text += "\<\@"+result.ht+"\> played \<\@"+result.at+"\> and won ("+result.hg+"-"+result.ag+") :soccer:";
@@ -575,9 +575,9 @@ app.post("/api/:type", function(req, res) {
             //Before pushing, add all pairwise games to leage (non played games)
             json.teams.map(function(t) {
                 console.log("Adding: " + t + "-" + u);
-                json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}};
+                json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}, "registered":""};
                 console.log("Adding: " + u + "-" + t);
-                json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}};
+                json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}, "registered":""};
             });
             json.teams.push(u);
             
@@ -601,7 +601,8 @@ app.post("/api/:type", function(req, res) {
     
     //Add result from game
     else if (type === "result") {
-        var result = processResult(entry.text, json);
+        var u = json.users[entry.user_name].user_id;
+        var result = processResult(entry.text, json, u);
         //If result is correctly formatted
         if (result.valid) {
             //Count if result is connected to league game or finals (league games left)
@@ -615,6 +616,7 @@ app.post("/api/:type", function(req, res) {
                     json.league[result.ht + "-" + result.at].goals.home = parseInt(result.hg);
                     json.league[result.ht + "-" + result.at].goals.away = parseInt(result.ag);
                     json.league[result.ht + "-" + result.at].date = Date.now();
+                    json.league[result.ht + "-" + result.at].registered = u;
 
                     //Generate league table
                     json.table = generateTable(json);
@@ -638,7 +640,8 @@ app.post("/api/:type", function(req, res) {
                     json.league[result.at + "-" + result.ht].goals.home = parseInt(result.ag);
                     json.league[result.at + "-" + result.ht].goals.away = parseInt(result.hg);
                     json.league[result.at + "-" + result.ht].date = Date.now();
-
+                    json.league[result.ht + "-" + result.at].registered = u;
+                    
                     //Generate league table
                     json.table = generateTable(json);
 
@@ -671,6 +674,7 @@ app.post("/api/:type", function(req, res) {
                             game.goals.home = (game.teams.home === result.ht) ? result.hg : result.ag;
                             game.goals.away = (game.teams.home === result.ht) ? result.ag : result.hg;
                             game.date = Date.now();
+                            game.registered = u;
 
                             var winner = (result.hg > result.ag) ? result.ht : result.at;
                             var loser = (result.hg < result.ag) ? result.ht : result.at;
@@ -802,6 +806,7 @@ app.post("/api/:type", function(req, res) {
                 var d = new Date(m.date);
                 text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
                 text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+                text += " [\<\@"+m.registered+"\>]";
             });
         }
 
@@ -863,11 +868,12 @@ app.post("/api/:type", function(req, res) {
 
     //Undo game
     else if (type === "undo") {
-        if (json.admin.user === json.users[entry.user_name].user_id &&
+        var u = json.users[entry.user_name].user_id;
+        if (json.admin.user === u &&
             json.admin.channel === entry.channel_id) {
             //Go through league games and undo a game
             if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
-                var result = processResult(entry.text, json);
+                var result = processResult(entry.text, json, u);
                 //If result is correctly formatted
                 if (result.valid) {
                     if (json.league[result.ht + "-" + result.at].played) {
@@ -876,8 +882,12 @@ app.post("/api/:type", function(req, res) {
                         json.league[result.ht + "-" + result.at].goals.home = 0;
                         json.league[result.ht + "-" + result.at].goals.away = 0;
                         json.league[result.ht + "-" + result.at].date = 0;
-                    }
-                }
+                        json.league[result.ht + "-" + result.at].registered = "";
+                        json.table = generateTable(json);
+                        writeJSON(json);
+                        res.send("Game removed");
+                    } else res.send("Game not played");
+                } else res.send("Game not valid");
             } else {
                 res.send("Undo only works for league games (for now)");
             }
