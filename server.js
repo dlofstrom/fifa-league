@@ -640,7 +640,7 @@ app.post("/api/:type", function(req, res) {
                     json.league[result.at + "-" + result.ht].goals.home = parseInt(result.ag);
                     json.league[result.at + "-" + result.ht].goals.away = parseInt(result.hg);
                     json.league[result.at + "-" + result.ht].date = Date.now();
-                    json.league[result.ht + "-" + result.at].registered = u;
+                    json.league[result.at + "-" + result.ht].registered = u;
                     
                     //Generate league table
                     json.table = generateTable(json);
