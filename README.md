@@ -9,7 +9,7 @@ A FIFA league application using Slack as frontend.
 - [ ] Fix Final game remove
 - [ ] Inform about team and game removed
 - [ ] Add a game canceled feature to be able to have a league deadline (without giving points to a team)
-- [ ] Set a treashold for number of teams in one group, then split into two (or three etc.) groups in the league stage
+- [ ] Set a threshold for number of teams in one group, then split into two (or three etc.) groups in the league stage
 
 ## Game Format
 The league is played in two stages, the league stage and the final stage.
