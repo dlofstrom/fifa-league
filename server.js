@@ -765,7 +765,7 @@ app.post("/api/:type", function(req, res) {
         text += "\n`/table` prints league table";
         text += "\n`/finals` prints final brackets";
         text += "\n`/stats @team` prints more details about a team";
-        text += "\n`/history` prints all games played in order";
+        text += "\n`/history (@team)` prints all games played in order (or for a specified team)";
         res.send(text);
     }
 
@@ -791,31 +791,51 @@ app.post("/api/:type", function(req, res) {
 
     //Print all games played
     else if (type === "history") {
-        var text = "*League games played:*";
-        Object.values(json.league).filter(function(m) {
+        var u = "";
+        var text = "";
+        if (entry.text != "") u = json.users[entry.text.substring(1)].user_id;
+
+        //If user specified
+        if (u != "") text += "*League games played by \<\@" + u + "\>:*";
+        else text += "*League games played:*";
+        
+        //Filter played games in league
+        var games = Object.values(json.league).filter(function(m){
             return (m.played && m.teams.home!="" && m.teams.away!="" && m.teams.home!="WALKOVER" && m.teams.away!="WALKOVER");
         }).sort(function(a,b) {
             return a.date - b.date;
-        }).forEach(function(m) {
+        });
+        //Filter user games if specified
+        if (u != "") games = games.filter(function(m){return m.teams.home === u || m.teams.away === u});
+        
+        //Append text
+        games.map(function(m){
             var d = new Date(m.date);
             text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
             text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
             text += " [\<\@"+m.registered+"\>]";
         });
+
+        //If user specified
+        if (u != "") text += "*\n\nFinal games played by \<\@" + u + "\>:*";
+        else text += "*Final games played:*";
         
-        if (json.finals) {
-            text += "\n\n*Final games played:*";
-            Object.values(json.finals).filter(function(m) {
-                return (m.played && m.teams.home!="" && m.teams.away!="" && m.teams.home!="WALKOVER" && m.teams.away!="WALKOVER");
-            }).sort(function(a,b) {
-                return a.date - b.date;
-            }).forEach(function(m) {
-                var d = new Date(m.date);
-                text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
-                text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
-                text += " [\<\@"+m.registered+"\>]";
-            });
-        }
+        //Filter played games in league
+        var games = Object.values(json.finals).filter(function(m){
+            return (m.played && m.teams.home!="" && m.teams.away!="" && m.teams.home!="WALKOVER" && m.teams.away!="WALKOVER");
+        }).sort(function(a,b) {
+            return a.date - b.date;
+        });
+        //Filter user games if specified
+        if (u != "") games = games.filter(function(m){return m.teams.home === u || m.teams.away === u});
+        
+        //Append text
+        games.map(function(m){
+            var d = new Date(m.date);
+            text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
+            text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+            text += " [\<\@"+m.registered+"\>]";
+        });
 
         res.send(text);
     }
