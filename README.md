@@ -15,7 +15,7 @@ A FIFA league application using Slack as frontend.
 - [x] Add `/history @team` to show only games played by one team
 - [x] Change `/games` to show all games left instead of yourself
 - [ ] Change from winners/losers bracket to upper/lower bracket
-- [ ] Dont allow signup after league stage is done (or have a manual close signup)
+- [x] Dont allow signup after league stage is done
 
 ## Game Format
 The league is played in two stages, the league stage and the final stage.

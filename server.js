@@ -579,30 +579,35 @@ app.post("/api/:type", function(req, res) {
     //Add new team
     if (type === "signup") {
         var u = json.users[entry.user_name].user_id;
-        //Add team if it is a unique name
-        if (!json.teams.includes(u)) {
-            //Before pushing, add all pairwise games to leage (non played games)
-            json.teams.map(function(t) {
-                console.log("Adding: " + t + "-" + u);
-                json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}, "registered":""};
-                console.log("Adding: " + u + "-" + t);
-                json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}, "registered":""};
-            });
-            json.teams.push(u);
-            
-            //Generate league table
-            json.table = generateTable(json);
+        //Only allow signup during league stage
+        if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
+            //Add team if it is a unique name
+            if (!json.teams.includes(u)) {
+                //Before pushing, add all pairwise games to leage (non played games)
+                json.teams.map(function(t) {
+                    console.log("Adding: " + t + "-" + u);
+                    json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}, "registered":""};
+                    console.log("Adding: " + u + "-" + t);
+                    json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}, "registered":""};
+                });
+                json.teams.push(u);
+                
+                //Generate league table
+                json.table = generateTable(json);
 
-            writeJSON(json);
-            console.log(json);
-            
-            //Respond with successful add to league
-            //res.json({response_type: "in_channel", text: "\<\@" + u + "\> was added to the league!"}); //echo back
-            chatSignup(u, json);
-            res.send("Team \<\@" + u + "\> signed up!");
+                writeJSON(json);
+                console.log(json);
+                
+                //Respond with successful add to league
+                //res.json({response_type: "in_channel", text: "\<\@" + u + "\> was added to the league!"}); //echo back
+                chatSignup(u, json);
+                res.send("Team \<\@" + u + "\> signed up!");
+            } else {
+                //If team already is signed up
+                res.send("Team \<\@" + u + "\> already signed up");
+            }
         } else {
-            //If team already is signed up
-            res.send("Team \<\@" + u + "\> already signed up");
+            res.send("Unfortunately the league stage is done so you cant join the league :cry:");
         }
     }
 
