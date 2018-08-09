@@ -387,6 +387,15 @@ var processResult = function(d, json, u) {
     return r;
 }
 
+//General chat function to print public information
+var chat = function(text, json) {
+    web.chat.postMessage({channel: json.public, text: text})
+        .then((res) => {
+            // `res` contains information about the posted message
+            console.log("Message sent to public channel: ", res.ts);
+        })
+        .catch(console.error);
+}
 
 //Chat posts (into public channel)
 var chatSignup = function(user, json) {
@@ -904,7 +913,15 @@ app.post("/api/:type", function(req, res) {
                 //If result is correctly formatted
                 if (result.valid) {
                     if (json.league[result.ht + "-" + result.at].played) {
-                        //Clear
+                        //Generate information
+                        var text = "*Game removed by admin*";
+                        var m = json.league[result.ht + "-" + result.at];
+                        var d = new Date(m.date);
+                        text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
+                        text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
+                        text += " [\<\@"+m.registered+"\>]";
+                        
+                        //Clear                        
                         json.league[result.ht + "-" + result.at].played = false;
                         json.league[result.ht + "-" + result.at].goals.home = 0;
                         json.league[result.ht + "-" + result.at].goals.away = 0;
@@ -913,6 +930,7 @@ app.post("/api/:type", function(req, res) {
                         json.table = generateTable(json);
                         writeJSON(json);
                         res.send("Game removed");
+                        chat(text ,json);
                     } else res.send("Game not played");
                 } else res.send("Game not valid");
             } else {
