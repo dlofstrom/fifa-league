@@ -147,12 +147,12 @@ var generateBracket = function(json) {
     //Number of teams
     var n = json.table.length;
 
-    //Generate winners bracket team order (1 8 4 5 2 7 3 6)
+    //Generate upper bracket team order (1 8 4 5 2 7 3 6)
     var nw = (n > 8) ? 8 : n;
     var order = getOrder(nw,0);
-    console.log("Order of winners bracket " + order);
+    console.log("Order of upper bracket " + order);
 
-    //Generate static winners bracket
+    //Generate static upper bracket
     json.finals["0"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                         "next":{"game":"done", "team":""},
                         "stage":{"name":"Final", "number":1},
@@ -166,7 +166,7 @@ var generateBracket = function(json) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["w"+w] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                   "next":{"game":"w"+Math.floor(w/2), "team":team[w%2]},
-                                  "stage":{"name":"Winners "+2*stage+postfix, "number":i},
+                                  "stage":{"name":"Upper "+2*stage+postfix, "number":i},
                                   "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
             //Fix next is final
             if (Math.floor(w/2) === 0) {
@@ -177,12 +177,12 @@ var generateBracket = function(json) {
         }
         stage *= 2;
     }
-    //console.log("Winners generated");
+    //console.log("Upper generated");
     //console.log(json.finals);
 
 
-    //Generate losers bracket
-    //If there are more than 8 players in losers, keep generating games in losers (but minimum 8)
+    //Generate lower bracket
+    //If there are more than 8 players in lower, keep generating games in lower (but minimum 8)
     nl = (n-8 > 8) ? n-8 : 8;
     stage = 1;
     var l = 1;
@@ -191,15 +191,15 @@ var generateBracket = function(json) {
             var postfix = (stage === 1) ? "nd" : "th";
             json.finals["l"+l] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                   "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
-                                  "stage":{"name":"Losers "+2*stage+postfix, "number":i},
+                                  "stage":{"name":"Lower "+2*stage+postfix, "number":i},
                                   "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
 
-            //Generate revenge (r) stages for all losers in winners bracket
+            //Generate revenge (r) stages for all losers in upper bracket
             if (stage < nw) {
                 //Add r match pointing
                 json.finals["l"+l+"r"] = {"played":false, "date":0, "teams":{"home":"", "away":""}, "goals":{"home":0, "away":0}, "registered":"",
                                           "next":{"game":"l"+Math.floor(l/2), "team":team[l%2]},
-                                          "stage":{"name":"Losers "+2*stage+postfix+" stage 2", "number":i},
+                                          "stage":{"name":"Lower "+2*stage+postfix+" stage 2", "number":i},
                                           "parents":{"home":{"result":"", "key":"", "number":0}, "away":{"result":"", "key":"", "number":0}}};
                 //Fix next is final
                 if (Math.floor(l/2) === 0) {
@@ -223,7 +223,7 @@ var generateBracket = function(json) {
     //console.log(json.finals);
     
     
-    //Fill winners bracket first stage matches from order
+    //Fill upper bracket first stage matches from order
     order.forEach(function(position) {
         if (position < nw) {
             //Team exists, add to game (based on w)
@@ -256,12 +256,12 @@ var generateBracket = function(json) {
         }
         w += 1;
     });
-    //console.log("Winners filled");
+    //console.log("Upper filled");
     //console.log(json.finals);
     
 
-    //Fill losers bracket
-    //Add more teams if more than 8 (those who fit in winners bracket)
+    //Fill lower bracket
+    //Add more teams if more than 8 (those who fit in upper bracket)
     order = getOrder(nl, 8);
     //Fill leauge loser stage matches from order
     order.forEach(function(position) {
@@ -294,7 +294,7 @@ var generateBracket = function(json) {
     //Propagate match parents
     Object.keys(json.finals).forEach(function(k) {
         var f = json.finals[k];
-        //Start from a game and move winner to next (if winners also move loser)
+        //Start from a game and move winner to next (if upper also move loser)
         if (k != "0" && !f.played && f.teams.home != "WALKOVER" && f.teams.away != "WALKOVER") {
             propagateParents(json, f.next.game, f.next.team, "Winner", f.stage.name, f.stage.number);
             //If winner also move it forward
@@ -442,16 +442,16 @@ var printFinals = function(json) {
         //Final goes first
         if (a === "Final") return -1;
         if (b === "Final") return 1;
-        //Then Winners X<Y:th
+        //Then Upper X<Y:th
         var as = a.split(" ");
         var bs = b.split(" ");
-        if (as[0] === "Winners" && bs[0] != "Winners") return -1;
-        if (bs[0] === "Winners" && as[0] != "Winners") return -1;
-        if (as[0] === "Winners" && bs[0] === "Winners") {
+        if (as[0] === "Upper" && bs[0] != "Upper") return -1;
+        if (bs[0] === "Upper" && as[0] != "Upper") return -1;
+        if (as[0] === "Upper" && bs[0] === "Upper") {
             if (as[1] <= bs[1]) return -1;
             else return 1;
         }
-        //Then Losers X<Y:th stage x>y
+        //Then Lower X<Y:th stage x>y
         if (parseInt(as[1].substring(0,as[1].length-2)) < parseInt(bs[1].substring(0,bs[1].length-2))) return -1;
         if (parseInt(as[1].substring(0,as[1].length-2)) > parseInt(bs[1].substring(0,bs[1].length-2))) return 1;
         if (as.length === 4 && bs.length === 4) {
@@ -484,7 +484,7 @@ var printFinals = function(json) {
 
 var printRank = function(json, winner, loser) {
     var text = "*Final rank:*";
-    //Go through losers bracket and collect stage teams 1 1 1 1 2 2 4 4 8 8...        
+    //Go through lower bracket and collect stage teams 1 1 1 1 2 2 4 4 8 8...        
     var rank = [winner, loser];
     var stage = 1;
     var l = 1;
@@ -769,7 +769,7 @@ app.post("/api/:type", function(req, res) {
         var text = "*Game Format*\nThe league is played in two stages, the league stage and the final stage.";
         text += "\n\n*League stage*\nIn the league stage all teams meet each other twice (home and away) a win gives three (3) points and a draw gives one (1) point, the teams are sorted in a table primarily based on points, then goal difference and goals made. The league table rank determines the entry point in the final stage of the game.";
         text += "\n*_Games in the League stage are played full time, no extra time or tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same league team between 2-4 stars._*";
-        text += "\n\n*Final stage*\nWhen all league games are played the teams are sorted in the final brackets for the final stage. A double elimination bracket (https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. The winner from the winners and losers bracket plays the final game and determines the winner.";
+        text += "\n\n*Final stage*\nWhen all league games are played the teams are sorted in the final brackets for the final stage. A double elimination bracket (https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the upper bracket and the rest of the teams in the lower bracket, a losing team in the upper bracket can lose one game and end up in the lower bracket, a losing team in the lower bracket is eliminated from the finals. The winner from the upper and lower bracket plays the final game and determines the winner.";
         text += "\n*_Games in the Final stage are played full time, classic extra time followed by penalties for tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same (any) team between 4-5 stars._*"
         text += "\n\n*Slack commands*";
         text += "\n`/rules` displays this message";

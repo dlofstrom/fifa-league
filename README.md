@@ -14,7 +14,7 @@ A FIFA league application using Slack as frontend.
 - [ ] Add a star difference feature that gives players in the lower part of the table a handicap versus teams in the higher part of the table <br>_This can be implemented so that the table shows exactly how many stars a team should have in next game or show the difference in stars for the teams in a specific game_ <br>_This also allows for more interesting games between new players versus more experienced players_
 - [x] Add `/history @team` to show only games played by one team
 - [x] Change `/games` to show all games left instead of yourself
-- [ ] Change from winners/losers bracket to upper/lower bracket
+- [x] Change from winners/losers bracket to upper/lower bracket
 - [x] Dont allow signup after league stage is done
 
 ## Game Format
@@ -26,7 +26,7 @@ In the league stage all teams meet each other twice (home and away) a win gives 
 Games in the League stage are played full time, no extra time or tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same league team between 2-4 stars.
 
 ### Final stage
-When all league games are played the teams are sorted in the final brackets for the final stage. A [double elimination bracket](https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the winners bracket and the rest of the teams in the losers bracket, a losing team in the winners bracket can lose one game and end up in the losers bracket, a losing team in the losers bracket is eliminated from the finals. the winner from the winners and losers bracket plays the final game and determines the winner.
+When all league games are played the teams are sorted in the final brackets for the final stage. A [double elimination bracket](https://en.wikipedia.org/wiki/Double-elimination_tournament) is used where the top eight (8) teams is sorted in the upper bracket and the rest of the teams in the lower bracket, a losing team in the upper bracket can lose one game and end up in the lower bracket, a losing team in the lower bracket is eliminated from the finals. the winner from the upper and lower bracket plays the final game and determines the winner.
 
 Games in the Final stage are played full time, classic extra time followed by penalties for tie-breaks. The two players can choose teams however they want, the suggestion is that both play the same (any) team between 4-5 stars.
 
