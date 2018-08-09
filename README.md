@@ -5,8 +5,9 @@ A FIFA league application using Slack as frontend.
 - [x] Save "who registered" a game in result
 - [ ] Continous backup of the data file
 - [ ] Stop writing everything in one file (:sweat_smile:)
-- [ ] Implement team remove
-- [ ] Fix Final game remove
+- [x] Implement team remove
+- [ ] Implement Final game remove <br> _Hard to reset propagaton of teams, might have to regenerate entire table_
+- [ ] Implement team remove in final stage <br> _This can be implemented using WALKOVER and automatic propagation of other teams_
 - [x] Inform about league game removed in channel
 - [ ] Add a game canceled feature to be able to have a league deadline (without giving points to a team)
 - [ ] Set a threshold for number of teams in one group, then split into two (or three etc.) groups in the league stage

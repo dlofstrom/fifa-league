@@ -894,11 +894,26 @@ app.post("/api/:type", function(req, res) {
 
     //Remove team
     else if (type === "drop") {
+        //Check if admin
         if (json.admin.user === json.users[entry.user_name].user_id &&
-            json.admin.channel === entry.channel_id) {
-            //TODO: go throug teams and league and remove user, if finals it is not possible to dropout
+            json.admin.channel === entry.channel_id &&
+            entry.text != "") {
+            var u = json.users[entry.text.substring(1)].user_id;
+            
+            //Drop only works in league stage
+            if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
+                //Remove team from teams and league
+                json.teams = json.teams.filter(function(t){return t != u});
+                json.league = json.league.filter(function(m){return m.home != u && m.away != u});
+                json.table = generateTable(json);
+                writeJSON(json);
+                var text = "\<\@"+u+"\> left the league :cry:";
+                chat(text, json);
+            } else {
+                res.send("Undo only works for league games (for now)");
+            }
         } else {
-            res.send("Someone else is admin");
+            res.send("Someone else is admin or format is wrong");
         }
     }
 
