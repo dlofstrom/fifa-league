@@ -817,8 +817,8 @@ app.post("/api/:type", function(req, res) {
         });
 
         //If user specified
-        if (u != "") text += "*\n\nFinal games played by \<\@" + u + "\>:*";
-        else text += "*Final games played:*";
+        if (u != "") text += "\n\n*Final games played by \<\@" + u + "\>:*";
+        else text += "\n\n*Final games played:*";
         
         //Filter played games in league
         var games = Object.values(json.finals).filter(function(m){
