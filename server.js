@@ -716,21 +716,27 @@ app.post("/api/:type", function(req, res) {
 
     //List available games for user (argument or not) (private)
     else if (type === "games") {
-        var u = json.users[entry.user_name].user_id;
+        var u = "";
+        var text = "";
         if (entry.text != "") u = json.users[entry.text.substring(1)].user_id;
-        
-        var text = "*Games available for \<\@" + u + "\>:*";
-        if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
-            Object.values(json.league).map(function(m) {
-                if (m.teams.home === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-                else if (m.teams.away === u && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-            });
-        } else {
-            Object.values(json.finals).map(function(m) {
-                if (m.teams.home === u && m.teams.away != "" && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-                else if (m.teams.away === u && m.teams.home != "" && !m.played) text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
-            });
+        //If user specified
+        if (u != "") text += "*Games available for \<\@" + u + "\>:*";
+        else text += "*Games available:*";
+
+        //Filter non played games in either league or finals
+        var games = Object.values(json.league).filter(function(m){return !m.played});
+        //If all leagu games are played use finals instead
+        if (games.length === 0) games = Object.values(json.finals).filter(function(m){return !m.played});
+
+        //Filter user games if specified
+        if (u != "") {
+            games = games.filter(function(m){return m.teams.home === u || m.teams.away === u});
         }
+
+        //Append text
+        games.map(function(m){
+            text += "\n\<\@" + m.teams.home + "\> - \<\@" + m.teams.away + "\>";
+        });
         res.send(text);
     }
 
@@ -755,7 +761,7 @@ app.post("/api/:type", function(req, res) {
         text += "\n`/rules` displays this message";
         text += "\n`/signup` registers user (you) with slack user handle as team name";
         text += "\n`/result @hometeam @awayteam result(e.g 3-1)` registers a game result";
-        text += "\n`/games @team` displays available games for team";
+        text += "\n`/games (@team)` displays all available games (or for a specified team)";
         text += "\n`/table` prints league table";
         text += "\n`/finals` prints final brackets";
         text += "\n`/stats @team` prints more details about a team";

@@ -12,7 +12,7 @@ A FIFA league application using Slack as frontend.
 - [ ] Set a threshold for number of teams in one group, then split into two (or three etc.) groups in the league stage
 - [ ] Add a star difference feature that gives players in the lower part of the table a handicap versus teams in the higher part of the table <br>_This can be implemented so that the table shows exactly how many stars a team should have in next game or show the difference in stars for the teams in a specific game_ <br>_This also allows for more interesting games between new players versus more experienced players_
 - [ ] Add `/history @team` to show only games played by one team
-- [ ] Change `/games` to show all games left instead of yourself
+- [x] Change `/games` to show all games left instead of yourself
 - [ ] Change from winners/losers bracket to upper/lower bracket
 - [ ] Dont allow signup after league stage is done (or have a manual close signup)
 
@@ -51,10 +51,10 @@ Public commands:
 - `/rules` displays all commands and league rules
 - `/signup` registers user with slack user handle as team name
 - `/result @hometeam @awayteam result(e.g 3-1)` registers a game result
-- `/games` @team displays available games for team
+- `/games (@team)` displays all available games (or for a specified team)
 - `/table` prints league table
 - `/finals` prints final brackets
-- `/stats` @team prints more details about a team
+- `/stats @team` prints more details about a team
 - `/history` prints all games played in order
 
 ## Setup league
