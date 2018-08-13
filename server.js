@@ -925,6 +925,7 @@ app.post("/api/:type", function(req, res) {
                 writeJSON(json);
                 var text = "\<\@"+u+"\> left the league :cry:";
                 text += "\n" + printLeague(json);
+                res.send("Team removed");
                 chat(text, json);
             } else {
                 res.send("Undo only works for league games (for now)");
