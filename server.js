@@ -920,10 +920,11 @@ app.post("/api/:type", function(req, res) {
                     if (json.league[k].teams.home == u || json.league[k].teams.away == u) {
                         delete json.league[k];
                     }
-                }
+                });
                 json.table = generateTable(json);
                 writeJSON(json);
                 var text = "\<\@"+u+"\> left the league :cry:";
+                text += "\n" + printLeague(json);
                 chat(text, json);
             } else {
                 res.send("Undo only works for league games (for now)");
