@@ -922,9 +922,15 @@ app.post("/api/:type", function(req, res) {
                     }
                 });
                 json.table = generateTable(json);
-                writeJSON(json);
                 var text = "\<\@"+u+"\> left the league :cry:";
                 text += "\n" + printLeague(json);
+                if (Object.values(json.league).filter(function(m){return !m.played}).length === 0) {
+                    //If not, generate final brackets
+                    console.log("GENERATE FINAL BRACKETS");
+                    json.finals = generateBracket(json);
+                    text += "\n" + printFinals(json);
+                }
+                writeJSON(json);
                 res.send("Team removed");
                 chat(text, json);
             } else {
