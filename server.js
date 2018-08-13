@@ -915,7 +915,12 @@ app.post("/api/:type", function(req, res) {
             if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
                 //Remove team from teams and league
                 json.teams = json.teams.filter(function(t){return t != u});
-                json.league = Object.values(json.league).filter(function(m){return m.home != u && m.away != u});
+                var keys = Object.keys(json.league);
+                keys.map(function(k) {
+                    if (json.league[k].teams.home == u || json.league[k].teams.away == u) {
+                        delete json.league[k];
+                    }
+                }
                 json.table = generateTable(json);
                 writeJSON(json);
                 var text = "\<\@"+u+"\> left the league :cry:";
