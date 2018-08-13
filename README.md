@@ -2,6 +2,7 @@
 A FIFA league application using Slack as frontend.
 
 ## TODO list
+- [ ] Final game is best of 3
 - [x] Save "who registered" a game in result
 - [ ] Continous backup of the data file
 - [ ] Stop writing everything in one file (:sweat_smile:)
