@@ -82,7 +82,7 @@ var generateTable = function(json) {
             
             //win, lose, draw, points
             if (m.canceled) {
-                table[m.teams.away].pts -= 1;
+                table[m.teams.home].pts -= 1;
                 table[m.teams.away].pts -= 1;
             }else if (m.goals.home > m.goals.away) {
                 //Home wins
@@ -994,10 +994,10 @@ app.post("/api/:type", function(req, res) {
 
                             if (g != "") {
                                 json.league[g].played = true;
-                                json.league[g].canceleded = true;
+                                json.league[g].canceled = true;
                                 json.league[g].date = Date.now();
                                 json.league[g].registered = u;
-                                text += "\n\<\@"+json.league[g].teams.home+"\> - \<\@"+json.league[g].teams.home+"\>";
+                                text += "\n\<\@"+json.league[g].teams.home+"\> - \<\@"+json.league[g].teams.away+"\>";
                             }
                         }
                     }
