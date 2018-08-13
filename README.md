@@ -10,7 +10,7 @@ A FIFA league application using Slack as frontend.
 - [ ] Implement Final game remove <br> _Hard to reset propagaton of teams, might have to regenerate entire table_
 - [ ] Implement team remove in final stage <br> _This can be implemented using WALKOVER and automatic propagation of other teams_
 - [x] Inform about league game removed in channel
-- [ ] Add a game canceled feature to be able to have a league deadline (without giving points to a team)
+- [x] Add a game canceled feature to be able to have a league deadline (without giving points to a team)
 - [ ] Set a threshold for number of teams in one group, then split into two (or three etc.) groups in the league stage
 - [ ] Add a star difference feature that gives players in the lower part of the table a handicap versus teams in the higher part of the table <br>_This can be implemented so that the table shows exactly how many stars a team should have in next game or show the difference in stars for the teams in a specific game_ <br>_This also allows for more interesting games between new players versus more experienced players_
 - [x] Add `/history @team` to show only games played by one team

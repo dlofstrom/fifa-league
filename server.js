@@ -81,7 +81,10 @@ var generateTable = function(json) {
             table[m.teams.away].gp += 1;
             
             //win, lose, draw, points
-            if (m.goals.home > m.goals.away) {
+            if (m.canceled) {
+                table[m.teams.away].pts -= 1;
+                table[m.teams.away].pts -= 1;
+            }else if (m.goals.home > m.goals.away) {
                 //Home wins
                 table[m.teams.home].w += 1;
                 table[m.teams.away].l += 1;
@@ -586,9 +589,9 @@ app.post("/api/:type", function(req, res) {
                 //Before pushing, add all pairwise games to leage (non played games)
                 json.teams.map(function(t) {
                     console.log("Adding: " + t + "-" + u);
-                    json.league[t + "-" + u] = {"played":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}, "registered":""};
+                    json.league[t + "-" + u] = {"played":false, "canceled":false, "date":0, "teams":{"home":t, "away":u}, "goals":{"home":0, "away":0}, "registered":""};
                     console.log("Adding: " + u + "-" + t);
-                    json.league[u + "-" + t] = {"played":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}, "registered":""};
+                    json.league[u + "-" + t] = {"played":false, "canceled":false, "date":0, "teams":{"home":u, "away":t}, "goals":{"home":0, "away":0}, "registered":""};
                 });
                 json.teams.push(u);
                 
@@ -825,9 +828,12 @@ app.post("/api/:type", function(req, res) {
         //Append text
         games.map(function(m){
             var d = new Date(m.date);
-            text += "\n"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
+            text += "\n";
+            if (m.canceled) text += "-";
+            text += d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
             text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
             text += " [\<\@"+m.registered+"\>]";
+            if (m.canceled) text += "-";
         });
 
         //If user specified
@@ -943,6 +949,7 @@ app.post("/api/:type", function(req, res) {
                         
                         //Clear                        
                         json.league[result.ht + "-" + result.at].played = false;
+                        json.league[result.ht + "-" + result.at].canceled = false;
                         json.league[result.ht + "-" + result.at].goals.home = 0;
                         json.league[result.ht + "-" + result.at].goals.away = 0;
                         json.league[result.ht + "-" + result.at].date = 0;
@@ -961,6 +968,63 @@ app.post("/api/:type", function(req, res) {
         }
     }
 
+    //Cancel games
+    else if (type === "cancel") {
+        //Check if admin
+        var u = json.users[entry.user_name].user_id;
+        if (json.admin.user === u &&
+            json.admin.channel === entry.channel_id) {
+            //Go through league games cancel non played games
+            if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
+                if (entry.text === "1" || entry.text === "2") {
+                    var text = "*The following games was canceled:*";
+                    //For every team, check if one or both games have been played
+                    var n = json.teams.length;
+                    //Go through every pair
+                    for (var i = 0; i < n; i++) {
+                        var ht = json.teams[i];
+                        for (var j = i+1; j < n; j++) {
+                            var at = json.teams[j];
+                            var g = "";
+                            if (entry.text === "1" && !json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
+                            else if (entry.text === "2" && json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
+                            else if (entry.text === "2" && !json.league[ht + "-" + at].played && json.league[at + "-" + ht].played) g = ht + "-" + at;
+
+                            if (g != "") {
+                                json.league[g].played = true;
+                                json.league[g].canceleded = true;
+                                json.league[g].date = Date.now();
+                                json.league[g].registered = u;
+                                text += "\n\<\@"+json.league[g].teams.home+"\> - \<\@"+json.league[g].teams.home+"\>";
+                            }
+                        }
+                    }
+                    //Generate league table
+                    json.table = generateTable(json);
+                    
+                    //Count again if there are any league games left
+                    if (Object.values(json.league).filter(function(m){return !m.played}).length === 0) {
+                        //If not, generate final brackets
+                        console.log("GENERATE FINAL BRACKETS");
+                        json.finals = generateBracket(json);
+                        chatResult(result, json, "league done");
+                    } else {
+                        //Channel response
+                        chatResult(result, json, "league");
+                    }
+                    res.send("Games canceled");
+                    writeJSON(json);
+                    chat(text, json);
+                } else {
+                    res.send("Wrong argument e.g /cancel 1 (or 2)");
+                }
+            } else {
+                res.send("Cancel only works for league games (for now)");
+            }
+        } else {
+            res.send("Someone else is admin");
+        }
+    }
     
     //Event subscription when a user changed information or someone joined the channel
     else if (type === "user") {
