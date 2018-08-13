@@ -977,7 +977,7 @@ app.post("/api/:type", function(req, res) {
             //Go through league games cancel non played games
             if (Object.values(json.league).filter(function(m){return !m.played}).length > 0) {
                 if (entry.text === "1" || entry.text === "2") {
-                    var text = "*The following games was canceled:*";
+                    var text = "*The following games were canceled:*";
                     //For every team, check if one or both games have been played
                     var n = json.teams.length;
                     //Go through every pair
