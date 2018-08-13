@@ -1001,6 +1001,7 @@ app.post("/api/:type", function(req, res) {
                             }
                         }
                     }
+                    
                     //Generate league table
                     json.table = generateTable(json);
                     
@@ -1009,10 +1010,10 @@ app.post("/api/:type", function(req, res) {
                         //If not, generate final brackets
                         console.log("GENERATE FINAL BRACKETS");
                         json.finals = generateBracket(json);
-                        chatResult(result, json, "league done");
+                        text += "\n\n" + printLeague(json) + "\n\n" + printFinals(json);
                     } else {
                         //Channel response
-                        chatResult(result, json, "league");
+                        text += "\n\n" + printLeague(json);
                     }
                     res.send("Games canceled");
                     writeJSON(json);
