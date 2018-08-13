@@ -829,11 +829,11 @@ app.post("/api/:type", function(req, res) {
         games.map(function(m){
             var d = new Date(m.date);
             text += "\n";
-            if (m.canceled) text += "-";
+            if (m.canceled) text += "~";
             text += d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)+": ";
             text += "\<\@"+m.teams.home+"\> - \<\@"+m.teams.away+"\> ("+m.goals.home+"-"+m.goals.away+")";
             text += " [\<\@"+m.registered+"\>]";
-            if (m.canceled) text += "-";
+            if (m.canceled) text += "~";
         });
 
         //If user specified
