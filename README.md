@@ -48,6 +48,7 @@ Admin commands:
 - `/public` sets current channel to the official channel for results, so that private chats wont work
 - `/drop` @team removes team and all results from league
 - `/undo @hometeam @awayteam result(e.g 3-1)` removes a game result
+- `/cancel 1 (or 2)` cancel non played games in league (cancel only one of two or both for every pair of teams)
 
 Public commands:
 - `/rules` displays all commands and league rules

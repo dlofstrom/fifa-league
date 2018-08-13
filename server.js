@@ -983,7 +983,9 @@ app.post("/api/:type", function(req, res) {
                     //Go through every pair
                     for (var i = 0; i < n; i++) {
                         var ht = json.teams[i];
-                        for (var j = i+1; j < n; j++) {
+                        for (var j = 0; j < n; j++) {
+                            if (i === j) continue;
+                            
                             var at = json.teams[j];
                             var g = "";
                             if (entry.text === "1" && !json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
