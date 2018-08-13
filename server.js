@@ -989,7 +989,7 @@ app.post("/api/:type", function(req, res) {
                             var at = json.teams[j];
                             var g = "";
                             if (entry.text === "1" && !json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
-                            else if (entry.text === "2" && json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
+                            else if (entry.text === "2" && json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = at + "-" + ht;
                             else if (entry.text === "2" && !json.league[ht + "-" + at].played && json.league[at + "-" + ht].played) g = ht + "-" + at;
 
                             if (g != "") {
