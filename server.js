@@ -1010,6 +1010,8 @@ app.post("/api/:type", function(req, res) {
                             if (g != "") {
                                 json.league[g].played = true;
                                 json.league[g].canceled = true;
+                                json.league[g].goals.home = 0;
+                                json.league[g].goals.away = 0;
                                 json.league[g].date = Date.now();
                                 json.league[g].registered = u;
                                 text += "\n\<\@"+json.league[g].teams.home+"\> - \<\@"+json.league[g].teams.away+"\>";
