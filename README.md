@@ -2,6 +2,7 @@
 A FIFA league application using Slack as frontend.
 
 ## TODO list
+- [ ] Fix generateBracket and moveBracket to not depend on globals
 - [ ] Final game is best of 3
 - [x] Save "who registered" a game in result
 - [ ] Continous backup of the data file
