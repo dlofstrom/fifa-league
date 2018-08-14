@@ -744,7 +744,7 @@ app.post("/api/:type", function(req, res) {
         var games = Object.values(json.league).filter(function(m){return !m.played});
         //If all leagu games are played use finals instead
         if (games.length === 0) games = Object.values(json.finals).filter(function(m){
-            return !m.played && m.teams.home != "" && m.teams.home != "WALKOVER" && m.teams.away != "" && m.teams.away != "WALKOVER");
+            return !m.played && m.teams.home != "" && m.teams.home != "WALKOVER" && m.teams.away != "" && m.teams.away != "WALKOVER";
         });
 
         //Filter user games if specified
