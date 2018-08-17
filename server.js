@@ -384,8 +384,8 @@ var processResult = function(d, json, u) {
     //Else data seems fine and input (d) now contains proper data
     r.ht = d[0];
     r.at = d[1];
-    r.hg = d[2][0];
-    r.ag = d[2][1];
+    r.hg = parseInt(d[2][0]);
+    r.ag = parseInt(d[2][1]);
     r.valid = true;
     return r;
 }
@@ -630,8 +630,8 @@ app.post("/api/:type", function(req, res) {
                 if (json.league.hasOwnProperty(result.ht + "-" + result.at) && json.league[result.ht + "-" + result.at].played === false) {
                     //Add home - away result
                     json.league[result.ht + "-" + result.at].played = true;
-                    json.league[result.ht + "-" + result.at].goals.home = parseInt(result.hg);
-                    json.league[result.ht + "-" + result.at].goals.away = parseInt(result.ag);
+                    json.league[result.ht + "-" + result.at].goals.home = result.hg;
+                    json.league[result.ht + "-" + result.at].goals.away = result.ag;
                     json.league[result.ht + "-" + result.at].date = Date.now();
                     json.league[result.ht + "-" + result.at].registered = u;
 
@@ -654,8 +654,8 @@ app.post("/api/:type", function(req, res) {
                 else if (json.league.hasOwnProperty(result.at + "-" + result.ht) && json.league[result.at + "-" + result.ht].played === false) {
                     //Add inverted home - away result
                     json.league[result.at + "-" + result.ht].played = true;
-                    json.league[result.at + "-" + result.ht].goals.home = parseInt(result.ag);
-                    json.league[result.at + "-" + result.ht].goals.away = parseInt(result.hg);
+                    json.league[result.at + "-" + result.ht].goals.home = result.ag;
+                    json.league[result.at + "-" + result.ht].goals.away = result.hg;
                     json.league[result.at + "-" + result.ht].date = Date.now();
                     json.league[result.at + "-" + result.ht].registered = u;
                     
@@ -693,8 +693,8 @@ app.post("/api/:type", function(req, res) {
                             game.date = Date.now();
                             game.registered = u;
 
-                            var winner = (parseInt(result.hg) > parseInt(result.ag)) ? result.ht : result.at;
-                            var loser = (parseInt(result.hg) < parseInt(result.ag)) ? result.ht : result.at;
+                            var winner = (result.hg > result.ag) ? result.ht : result.at;
+                            var loser = (result.hg < result.ag) ? result.ht : result.at;
                             
                             //Move winner forward
                             if (k === "0") {
