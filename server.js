@@ -693,8 +693,8 @@ app.post("/api/:type", function(req, res) {
                             game.date = Date.now();
                             game.registered = u;
 
-                            var winner = (result.hg > result.ag) ? result.ht : result.at;
-                            var loser = (result.hg < result.ag) ? result.ht : result.at;
+                            var winner = (parseInt(result.hg) > parseInt(result.ag)) ? result.ht : result.at;
+                            var loser = (parseInt(result.hg) < parseInt(result.ag)) ? result.ht : result.at;
                             
                             //Move winner forward
                             if (k === "0") {
