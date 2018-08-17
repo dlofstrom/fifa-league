@@ -953,7 +953,7 @@ app.post("/api/:type", function(req, res) {
                 var result = processResult(entry.text, json, u);
                 //If result is correctly formatted
                 if (result.valid) {
-                    if (json.league[result.ht + "-" + result.at].played) {
+                    if (json.league.hasOwnProperty(result.ht + "-" + result.at) && json.league[result.ht + "-" + result.at].played) {
                         //Generate information
                         var text = "*Game removed by admin*";
                         var m = json.league[result.ht + "-" + result.at];
@@ -1004,8 +1004,8 @@ app.post("/api/:type", function(req, res) {
                             var at = json.teams[j];
                             var g = "";
                             if (entry.text === "1" && !json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
-                            else if (entry.text === "2" && !json.league[at + "-" + ht].played) g = at + "-" + ht;
-                            else if (entry.text === "2" && !json.league[ht + "-" + at].played) g = ht + "-" + at;
+                            else if (entry.text === "2" && json.league.hasOwnProperty(result.at + "-" + result.ht) && !json.league[at + "-" + ht].played) g = at + "-" + ht;
+                            else if (entry.text === "2" && json.league.hasOwnProperty(result.ht + "-" + result.at) && !json.league[ht + "-" + at].played) g = ht + "-" + at;
 
                             if (g != "") {
                                 json.league[g].played = true;
