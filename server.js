@@ -627,7 +627,7 @@ app.post("/api/:type", function(req, res) {
                 //LEAGUE GAME
 
                 //If teams havn't met
-                if (json.league[result.ht + "-" + result.at].played === false) {
+                if (json.league.hasOwnProperty(result.ht + "-" + result.at) && json.league[result.ht + "-" + result.at].played === false) {
                     //Add home - away result
                     json.league[result.ht + "-" + result.at].played = true;
                     json.league[result.ht + "-" + result.at].goals.home = parseInt(result.hg);
@@ -651,7 +651,7 @@ app.post("/api/:type", function(req, res) {
                     res.send("Result \<\@"+result.ht+"\>-\<\@"+result.at+"\> ("+result.hg+"-"+result.ag+") recorded");
                 }
                 //Else check return game
-                else if (json.league[result.at + "-" + result.ht].played === false) {
+                else if (json.league.hasOwnProperty(result.at + "-" + result.ht) && json.league[result.at + "-" + result.ht].played === false) {
                     //Add inverted home - away result
                     json.league[result.at + "-" + result.ht].played = true;
                     json.league[result.at + "-" + result.ht].goals.home = parseInt(result.ag);
@@ -676,7 +676,7 @@ app.post("/api/:type", function(req, res) {
                 }
                 //Else the teams should not meet
                 else {
-                    res.send("Teams have already met twice");
+                    res.send("Teams have already played their games");
                 }
             } else {
                 //FINALS GAME
