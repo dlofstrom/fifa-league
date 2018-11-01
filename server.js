@@ -1004,8 +1004,8 @@ app.post("/api/:type", function(req, res) {
                             var at = json.teams[j];
                             var g = "";
                             if (entry.text === "1" && !json.league[ht + "-" + at].played && !json.league[at + "-" + ht].played) g = ht + "-" + at;
-                            else if (entry.text === "2" && json.league.hasOwnProperty(result.at + "-" + result.ht) && !json.league[at + "-" + ht].played) g = at + "-" + ht;
-                            else if (entry.text === "2" && json.league.hasOwnProperty(result.ht + "-" + result.at) && !json.league[ht + "-" + at].played) g = ht + "-" + at;
+                            else if (entry.text === "2" && json.league.hasOwnProperty(at + "-" + ht) && !json.league[at + "-" + ht].played) g = at + "-" + ht;
+                            else if (entry.text === "2" && json.league.hasOwnProperty(ht + "-" + at) && !json.league[ht + "-" + at].played) g = ht + "-" + at;
 
                             if (g != "") {
                                 json.league[g].played = true;
