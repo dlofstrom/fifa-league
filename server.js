@@ -512,8 +512,8 @@ var printRank = function(json, winner, loser) {
                 var teams = [].concat.apply([],rank);
                 var home = json.finals[k].teams.home;
                 var away = json.finals[k].teams.away;
-                if (home != "" && home != "WALKOVER" && !teams.includes(home)) sr.push(home);
-                if (away != "" && away != "WALKOVER" && !teams.includes(away)) sr.push(away);
+                if (home != "" && home != "WALKOVER" && !teams.includes(home)) s.push(home);
+                if (away != "" && away != "WALKOVER" && !teams.includes(away)) s.push(away);
             }
         }
         rank.push(s);
@@ -766,7 +766,14 @@ app.post("/api/:type", function(req, res) {
 
     //Print finals
     else if (type === "finals") {
-        res.send(printFinals(json));
+        var s = printFinals(json);
+        if (json.finals["0"].played) {
+            m = json.finals["0"];
+            var winner = (m.goals.home > m.goals.away) ? m.teams.home : m.teams.away;
+            var loser = (m.goals.home < m.goals.away) ? m.teams.home : m.teams.away;
+            s += "\n\n" + printRank(json, winner, loser);
+        }
+        res.send(s);
     }
 
     //Print help and rules
